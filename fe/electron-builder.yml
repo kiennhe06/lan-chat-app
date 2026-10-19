@@ -1,8 +1,8 @@
 # Đóng gói Windows PORTABLE (.exe chạy trực tiếp, không cài đặt, không registry).
-# Build: npm run dist:win  → release/LAN Chat-1.0.0.exe
+# Build: npm run dist:win  → release/LAN-Chat-1.0.0.exe
 appId: local.lanchat.client
 productName: LAN Chat
-artifactName: "${productName}-${version}.${ext}"
+artifactName: "LAN-Chat-${version}.${ext}"
 copyright: LAN Chat
 directories:
   output: release

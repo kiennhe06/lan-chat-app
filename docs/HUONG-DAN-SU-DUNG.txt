@@ -12,13 +12,13 @@ PHẦN A. DÀNH CHO NHÂN VIÊN
 ------------------------------------------------------------------
 
 BƯỚC 1. LẤY FILE VỀ MÁY
-  Nhận file "LAN Chat-1.0.0.exe" theo 1 trong 2 cách:
+  Nhận file "LAN-Chat-1.0.0.exe" theo 1 trong 2 cách:
 
   Cách 1 - Qua thư mục chia sẻ trong mạng (không cần USB):
     1. Mở File Explorer (phím Windows + E).
     2. Gõ vào thanh địa chỉ:  \\<IP máy quản lý>   rồi nhấn Enter
        (ví dụ: \\192.168.1.5 - hỏi người quản lý địa chỉ này).
-    3. Mở thư mục được chia sẻ, COPY file "LAN Chat-1.0.0.exe".
+    3. Mở thư mục được chia sẻ, COPY file "LAN-Chat-1.0.0.exe".
 
   Cách 2 - Qua USB: copy file từ USB sang máy.
 
@@ -32,7 +32,7 @@ BƯỚC 1. LẤY FILE VỀ MÁY
 
 
 BƯỚC 2. MỞ ỨNG DỤNG LẦN ĐẦU
-  1. Bấm đúp vào "LAN Chat-1.0.0.exe".
+  1. Bấm đúp vào "LAN-Chat-1.0.0.exe".
   2. Nếu hiện bảng màu xanh "Windows protected your PC"
      (Windows đã bảo vệ máy tính của bạn):
        -> Bấm "More info" (Thông tin thêm)
@@ -106,7 +106,7 @@ PHẦN B. XỬ LÝ SỰ CỐ THƯỜNG GẶP
      thư mục chia sẻ). Chuyển file sang D:\LANChat\ rồi mở lại.
 
 4. Phần mềm diệt virus chặn hoặc xóa file
-   - Nhờ người quản lý thêm file "LAN Chat-1.0.0.exe" vào danh
+   - Nhờ người quản lý thêm file "LAN-Chat-1.0.0.exe" vào danh
      sách ngoại lệ (Exclusions) của phần mềm diệt virus.
 
 5. Không nhận được tin khi máy chủ tắt
@@ -139,7 +139,7 @@ C1. CHẠY MÁY CHỦ
      Nhật ký hoạt động xem trên máy chủ, xem mục C5.
 
 C2. CHIA SẺ FILE CHO NHÂN VIÊN QUA MẠNG (không cần USB)
-  1. Tạo thư mục D:\ChiaSe\ và copy "LAN Chat-1.0.0.exe" cùng file
+  1. Tạo thư mục D:\ChiaSe\ và copy "LAN-Chat-1.0.0.exe" cùng file
      hướng dẫn này vào đó.
   2. Chuột phải thư mục -> Properties -> tab "Sharing" -> "Share..."
      -> chọn "Everyone" -> "Add" -> quyền "Read" -> "Share".
