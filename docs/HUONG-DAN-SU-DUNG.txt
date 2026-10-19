@@ -1,0 +1,217 @@
+﻿==================================================================
+                 HƯỚNG DẪN SỬ DỤNG LAN CHAT
+        Ứng dụng nhắn tin nội bộ - không cần internet
+==================================================================
+
+LAN Chat chạy trong mạng nội bộ của công ty, KHÔNG cần internet
+và KHÔNG cần cài đặt. Chỉ cần copy file về máy rồi bấm đúp để chạy.
+
+
+------------------------------------------------------------------
+PHẦN A. DÀNH CHO NHÂN VIÊN
+------------------------------------------------------------------
+
+BƯỚC 1. LẤY FILE VỀ MÁY
+  Nhận file "LAN Chat-1.0.0.exe" theo 1 trong 2 cách:
+
+  Cách 1 - Qua thư mục chia sẻ trong mạng (không cần USB):
+    1. Mở File Explorer (phím Windows + E).
+    2. Gõ vào thanh địa chỉ:  \\<IP máy quản lý>   rồi nhấn Enter
+       (ví dụ: \\192.168.1.5 - hỏi người quản lý địa chỉ này).
+    3. Mở thư mục được chia sẻ, COPY file "LAN Chat-1.0.0.exe".
+
+  Cách 2 - Qua USB: copy file từ USB sang máy.
+
+  QUAN TRỌNG:
+    - Tạo một thư mục riêng trên máy, ví dụ  D:\LANChat\
+      rồi dán file vào đó.
+    - KHÔNG để file trong "C:\Program Files".
+    - KHÔNG chạy file trực tiếp từ thư mục chia sẻ hoặc từ USB.
+      Ứng dụng sẽ tự tạo thư mục "data" ngay cạnh file để lưu
+      tin nhắn của bạn, nên file phải nằm trên máy của bạn.
+
+
+BƯỚC 2. MỞ ỨNG DỤNG LẦN ĐẦU
+  1. Bấm đúp vào "LAN Chat-1.0.0.exe".
+  2. Nếu hiện bảng màu xanh "Windows protected your PC"
+     (Windows đã bảo vệ máy tính của bạn):
+       -> Bấm "More info" (Thông tin thêm)
+       -> Bấm "Run anyway" (Vẫn chạy).
+     Đây là cảnh báo bình thường vì phần mềm nội bộ chưa đăng ký
+     chữ ký số với Microsoft.
+  3. Nếu Windows hiện bảng hỏi về tường lửa (Windows Security Alert)
+     mà bạn không có quyền quản trị: bấm "Cancel" cũng được.
+     LAN Chat vẫn kết nối tới máy chủ bình thường.
+  4. Ứng dụng có thể mất 5-15 giây để mở. Đây là bình thường,
+     vui lòng chờ, KHÔNG bấm đúp nhiều lần.
+
+
+BƯỚC 3. ĐĂNG KÝ TÀI KHOẢN (chỉ làm 1 lần)
+  1. Ở mục "Máy chủ", chọn máy chủ hiện trong danh sách.
+     Nếu danh sách trống: bấm "Quét lại", hoặc tự gõ địa chỉ IP
+     máy chủ do người quản lý cung cấp, cổng để mặc định 5001.
+  2. Chọn tab "Đăng ký" và điền:
+       - Tên đăng nhập: chữ không dấu, số, dấu _ . -
+                        (ví dụ: binh.tt), không có khoảng trắng.
+       - Mã nhân viên: ví dụ NV002.
+       - Tên hiển thị: tên thật, có dấu (ví dụ: Trần Thị Bình).
+       - Mật khẩu: từ 6 ký tự, chỉ dùng chữ không dấu, số và
+                   ký tự đặc biệt. KHÔNG gõ tiếng Việt có dấu.
+  3. Bấm "Đăng ký".
+
+  Lần sau: đăng nhập bằng TÊN ĐĂNG NHẬP hoặc MÃ NHÂN VIÊN
+  (không phân biệt chữ hoa/thường) cùng mật khẩu.
+  Tick "Ghi nhớ đăng nhập lần sau" để không phải gõ lại.
+
+
+BƯỚC 4. SỬ DỤNG
+  - Nhắn tin riêng: bấm "+ Tạo" -> chọn người.
+  - Tạo nhóm: bấm "+ Tạo" -> chọn nhóm, cần ít nhất 2 người khác.
+  - Gửi ảnh: bấm Ctrl+V để dán ảnh, hoặc bấm biểu tượng kẹp giấy.
+  - Gửi file: bấm biểu tượng kẹp giấy (tối đa 200MB mỗi file).
+  - Nhắc tên trong nhóm: gõ @ rồi chọn người.
+  - Trả lời / sửa / thu hồi / ghim: rê chuột vào tin nhắn,
+    bấm nút 3 chấm.
+  - Enter để gửi, Shift+Enter để xuống dòng.
+  - Đổi ảnh đại diện, mật khẩu, giao diện sáng/tối:
+    bấm biểu tượng bánh răng ở góc trên bên trái.
+  - Bấm X để đóng cửa sổ: ứng dụng vẫn chạy ẩn ở khay hệ thống
+    (góc phải thanh Taskbar) để tiếp tục nhận tin. Muốn thoát hẳn:
+    chuột phải vào biểu tượng ở khay -> "Thoát".
+
+  KHI THẤY THANH MÀU VÀNG "Server offline":
+    Máy chủ đang tắt. Bạn VẪN nhắn tin được với những người đang
+    mở ứng dụng. Tin nhắn sẽ tự đồng bộ khi máy chủ bật lại.
+    Ý nghĩa biểu tượng cạnh tin nhắn:
+      ⏳  chưa gửi được tới ai, sẽ tự gửi lại
+      📤  đã tới người nhận, chờ lưu lên máy chủ
+
+
+------------------------------------------------------------------
+PHẦN B. XỬ LÝ SỰ CỐ THƯỜNG GẶP
+------------------------------------------------------------------
+
+1. Danh sách máy chủ trống / không kết nối được
+   - Kiểm tra máy chủ (máy quản lý) đã bật chưa.
+   - Tự gõ địa chỉ IP máy chủ vào ô "Địa chỉ IP" rồi đăng nhập.
+   - Nếu vẫn không được: báo người quản lý kiểm tra mục C3
+     (kết nối tới máy chủ).
+
+2. Báo "Sai tên đăng nhập hoặc mật khẩu"
+   - Kiểm tra phím Caps Lock và bộ gõ tiếng Việt (Unikey):
+     tắt chế độ tiếng Việt khi gõ mật khẩu.
+
+3. Báo lỗi khởi động ngay khi mở
+   - File đang nằm ở chỗ không được phép ghi (Program Files, USB,
+     thư mục chia sẻ). Chuyển file sang D:\LANChat\ rồi mở lại.
+
+4. Phần mềm diệt virus chặn hoặc xóa file
+   - Nhờ người quản lý thêm file "LAN Chat-1.0.0.exe" vào danh
+     sách ngoại lệ (Exclusions) của phần mềm diệt virus.
+
+5. Không nhận được tin khi máy chủ tắt
+   - Chỉ chạy được khi IT đã mở cổng 5002/5003 (xem mục C3).
+     Nếu không, tin sẽ tự gửi khi máy chủ bật lại.
+
+KHÔNG xóa thư mục "data" nằm cạnh file exe: đó là lịch sử tin nhắn
+của bạn. Khi chuyển sang máy khác, chỉ copy file .exe, KHÔNG copy
+thư mục "data".
+
+Khi cần hỗ trợ: chụp màn hình lỗi và gửi kèm thư mục
+"data\logs" cho người quản lý.
+
+
+------------------------------------------------------------------
+PHẦN C. DÀNH CHO NGƯỜI QUẢN LÝ (máy chạy máy chủ)
+------------------------------------------------------------------
+
+C1. CHẠY MÁY CHỦ
+  1. Chuột phải file "LANChat-Server-1.0.0-win-x64.zip"
+     -> Properties -> tick "Unblock" (nếu có) -> OK.
+  2. Chuột phải -> "Extract All..." -> giải nén vào D:\LANChat-Server\
+  3. Lần đầu: bấm đúp "start-server.bat". Cửa sổ đen hiện địa chỉ
+     máy chủ, ví dụ ws://192.168.1.5:5001/ws
+     -> ghi lại IP này (192.168.1.5) để báo cho nhân viên.
+  4. Những lần sau: bấm đúp "start-server.vbs" để chạy ẩn.
+     Nếu file .vbs không chạy được thì tiếp tục dùng .bat.
+  5. Người ĐĂNG KÝ ĐẦU TIÊN trong ứng dụng sẽ là quản trị viên (được
+     chặn IP). Hãy đăng ký tài khoản của bạn trước tiên.
+     Nhật ký hoạt động xem trên máy chủ, xem mục C5.
+
+C2. CHIA SẺ FILE CHO NHÂN VIÊN QUA MẠNG (không cần USB)
+  1. Tạo thư mục D:\ChiaSe\ và copy "LAN Chat-1.0.0.exe" cùng file
+     hướng dẫn này vào đó.
+  2. Chuột phải thư mục -> Properties -> tab "Sharing" -> "Share..."
+     -> chọn "Everyone" -> "Add" -> quyền "Read" -> "Share".
+  3. Báo nhân viên làm theo Phần A, Bước 1, Cách 1.
+
+C3. KIỂM TRA KẾT NỐI (KHÔNG cần quyền administrator)
+  Máy nhân viên KHÔNG cần mở tường lửa: LAN Chat chỉ kết nối đi
+  ra máy chủ, Windows mặc định cho phép.
+  Chỉ MÁY CHỦ cần cho phép máy khác kết nối vào cổng 5001.
+  Phần lớn máy trong công ty đã được IT cho phép sẵn, hãy kiểm tra:
+
+  1. Chạy máy chủ (mục C1).
+  2. Sang MỘT MÁY KHÁC, mở trình duyệt (Chrome/Edge), gõ:
+        http://<IP máy chủ>:5001/health
+     (ví dụ: http://192.168.1.5:5001/health)
+  3. Thấy dòng chữ bắt đầu bằng {"app":"LANChat" ...
+        -> DÙNG ĐƯỢC NGAY, bỏ qua phần còn lại của mục này.
+     Trang không tải được / báo lỗi kết nối
+        -> Tường lửa máy chủ đang chặn, làm 1 trong 2 cách dưới.
+
+  Cách 1 - Nhờ IT mở 1 cổng (khuyến nghị):
+    Gửi IT yêu cầu: "Cho phép kết nối TCP vào cổng 5001 trên máy
+    <tên/IP máy chủ>, chỉ trong mạng nội bộ."
+    Nhắc IT kiểm tra thêm: nếu trên máy chủ có rule CHẶN (Block)
+    chương trình "node.exe" (thường sinh ra khi bấm "Cancel" ở bảng
+    cảnh báo tường lửa) thì phải xóa rule đó, vì rule chặn luôn
+    được ưu tiên hơn rule mở cổng.
+    Nếu IT đồng ý mở thêm, các cổng sau giúp tự tìm máy chủ nhanh
+    hơn và chat được khi máy chủ tắt (KHÔNG bắt buộc):
+      - Máy chủ: UDP 41234
+      - Mọi máy: TCP 5002, UDP 5003
+
+  Cách 2 - Dùng cổng IT đã mở sẵn:
+    Hỏi IT cổng nào đã được mở trong mạng nội bộ (ví dụ 8080).
+    Tắt máy chủ, mở file "app-config.json" trong thư mục máy chủ
+    bằng Notepad, sửa  "port": 5001  thành  "port": 8080
+    rồi lưu và chạy lại máy chủ.
+    Nhân viên nhập cổng 8080 ở ô "Cổng" trên màn hình đăng nhập.
+
+  Lưu ý khi KHÔNG mở thêm cổng 5002/5003:
+    - Mọi chức năng chạy bình thường khi máy chủ đang bật.
+    - Khi máy chủ tắt, nhân viên KHÔNG nhắn được cho nhau; tin nhắn
+      được giữ lại (biểu tượng ⏳) và tự gửi khi máy chủ bật lại.
+    - Nếu danh sách máy chủ trống, bấm "Quét lại" hoặc tự gõ IP.
+
+C4. SAO LƯU DỮ LIỆU
+  Toàn bộ dữ liệu máy chủ nằm trong D:\LANChat-Server\data\
+  Định kỳ (ví dụ mỗi tuần): tắt máy chủ -> copy cả thư mục "data"
+  sang ổ khác hoặc USB -> bật lại máy chủ.
+  Đặc biệt giữ thư mục "data\keys": nếu mất thư mục này, mọi người
+  phải đăng nhập lại.
+
+C5. XEM NHẬT KÝ HOẠT ĐỘNG CỦA THÀNH VIÊN (chỉ trên máy chủ)
+  1. Trên MÁY CHỦ (máy đang chạy server), mở Edge hoặc Chrome.
+  2. Gõ vào thanh địa chỉ:   http://localhost:5001/admin
+  3. Trang hiện danh sách hoạt động mới nhất ở trên cùng: ai đăng nhập,
+     ai gửi tin vào nhóm nào, ai gửi/tải file, ai tạo nhóm, thêm/xóa
+     thành viên, đăng nhập sai mật khẩu... kèm thời gian và địa chỉ IP.
+  4. Lọc theo thành viên, nhóm hoạt động, ngày, hoặc gõ từ khóa
+     (tên người, tên nhóm, IP, tên file).
+  5. Bấm "Xuất Excel (.csv)" để lưu ra file mở bằng Excel.
+
+  Lưu ý:
+  - Nhật ký KHÔNG lưu nội dung tin nhắn, chỉ ghi ai gửi, gửi vào đâu,
+    lúc nào.
+  - Chỉ xem được trên máy chủ. Máy khác gõ địa chỉ này sẽ bị từ chối,
+    và lần thử đó cũng được ghi vào nhật ký.
+  - Nhật ký được giữ 30 ngày (trong thư mục data\logs của máy chủ).
+
+C6. LƯU Ý
+  - Nên đặt IP tĩnh cho máy chủ để địa chỉ không đổi.
+  - Đồng hồ các máy nên đúng giờ (để thứ tự tin nhắn chính xác).
+  - Để mở LAN Chat cùng Windows: trong ứng dụng vào bánh răng
+    -> bật "Khởi động cùng Windows".
+==================================================================

@@ -1,0 +1,207 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/*
+ * Theme bằng CSS variables. Giá trị dạng "r g b" để Tailwind dùng được opacity (bg-primary/20).
+ * :root = sáng, html.dark = tối.
+ */
+:root {
+  --c-primary: 37 99 235;
+  --c-primary-hover: 29 78 216;
+  --c-on-primary: 255 255 255;
+  --c-bg: 241 245 249;
+  --c-surface: 255 255 255;
+  --c-surface-2: 248 250 252;
+  --c-text: 15 23 42;
+  --c-muted: 100 116 139;
+  --c-border: 226 232 240;
+  --c-bubble-own: 37 99 235;
+  --c-bubble-other: 226 232 240;
+  --c-bubble-other-text: 15 23 42;
+  --c-danger: 220 38 38;
+  --c-warning: 202 138 4;
+  --c-success: 22 163 74;
+  --c-pin-yellow: 254 243 199;
+  --c-highlight-yellow: 253 224 71;
+  --shadow-pop: 0 10px 30px rgb(15 23 42 / 0.18);
+  color-scheme: light;
+}
+
+html.dark {
+  --c-primary: 59 130 246;
+  --c-primary-hover: 96 165 250;
+  --c-on-primary: 255 255 255;
+  --c-bg: 15 23 42;
+  --c-surface: 30 41 59;
+  --c-surface-2: 39 52 73;
+  --c-text: 226 232 240;
+  --c-muted: 148 163 184;
+  --c-border: 51 65 85;
+  --c-bubble-own: 37 99 235;
+  --c-bubble-other: 51 65 85;
+  --c-bubble-other-text: 226 232 240;
+  --c-danger: 248 113 113;
+  --c-warning: 250 204 21;
+  --c-success: 74 222 128;
+  --c-pin-yellow: 66 56 20;
+  --c-highlight-yellow: 161 128 18;
+  --shadow-pop: 0 10px 30px rgb(0 0 0 / 0.5);
+  color-scheme: dark;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: rgb(var(--c-bg));
+  color: rgb(var(--c-text));
+  font-family: 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  font-size: 14px;
+  -webkit-font-smoothing: antialiased;
+  overflow: hidden;
+}
+
+/* Scrollbar gọn */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-thumb {
+  background: rgb(var(--c-muted) / 0.35);
+  border-radius: 8px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+@layer components {
+  .input {
+    @apply w-full rounded-lg border border-border bg-surface px-3 py-2 text-text outline-none transition placeholder:text-muted focus:border-primary focus:ring-2 focus:ring-primary/20 disabled:opacity-60;
+  }
+  .label {
+    @apply mb-1 block text-sm font-medium text-text;
+  }
+  .btn {
+    @apply inline-flex items-center justify-center gap-1 rounded-lg px-3 py-2 text-sm font-medium transition disabled:cursor-not-allowed disabled:opacity-50;
+  }
+  .btn-primary {
+    @apply btn bg-primary text-on-primary hover:bg-primary-hover;
+  }
+  .btn-secondary {
+    @apply btn border border-border bg-surface text-text hover:bg-surface-2;
+  }
+  .btn-danger {
+    @apply btn bg-danger text-white hover:opacity-90;
+  }
+  /* Nút kiểu "Đăng xuất" / "Xóa nhóm": đỏ, nền trong suốt, hover gạch chân */
+  .btn-link-danger {
+    @apply inline-flex items-center gap-1 bg-transparent px-2 py-1 text-sm font-medium text-danger hover:underline;
+  }
+  .icon-btn {
+    @apply inline-flex h-9 w-9 items-center justify-center rounded-full text-lg text-muted transition hover:bg-surface-2 hover:text-text;
+  }
+  .badge {
+    @apply inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold;
+  }
+}
+
+/* ===== Tin nhắn ===== */
+.msg-content-wrapper {
+  display: flex;
+  align-items: flex-end;
+  gap: 4px;
+}
+.msg-bubble-line {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+}
+.msg-bubble {
+  word-break: break-word;
+  overflow-wrap: anywhere;
+  min-width: 0;
+}
+.msg-text {
+  white-space: pre-wrap;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+}
+.msg-row .msg-menu-trigger {
+  visibility: hidden;
+}
+.msg-row:hover .msg-menu-trigger,
+.msg-row .msg-menu-trigger[aria-expanded='true'] {
+  visibility: visible;
+}
+.msg-highlight .msg-bubble {
+  animation: msg-highlight 1.5s ease-out;
+}
+@keyframes msg-highlight {
+  0%,
+  60% {
+    box-shadow: 0 0 0 3px rgb(var(--c-highlight-yellow));
+    background-color: rgb(var(--c-highlight-yellow));
+    color: rgb(15 23 42);
+  }
+  100% {
+    box-shadow: 0 0 0 0 transparent;
+  }
+}
+
+/* Typing: 3 chấm động */
+.typing-dot {
+  display: inline-block;
+  width: 5px;
+  height: 5px;
+  margin: 0 1px;
+  border-radius: 9999px;
+  background: rgb(var(--c-muted));
+  animation: typing-bounce 1.2s infinite ease-in-out;
+}
+.typing-dot:nth-child(2) {
+  animation-delay: 0.15s;
+}
+.typing-dot:nth-child(3) {
+  animation-delay: 0.3s;
+}
+@keyframes typing-bounce {
+  0%,
+  80%,
+  100% {
+    transform: translateY(0);
+    opacity: 0.4;
+  }
+  40% {
+    transform: translateY(-4px);
+    opacity: 1;
+  }
+}
+
+.shadow-pop {
+  box-shadow: var(--shadow-pop);
+}
+
+.line-clamp-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.sync-bar-indeterminate {
+  animation: sync-slide 1.2s infinite linear;
+}
+@keyframes sync-slide {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(300%);
+  }
+}

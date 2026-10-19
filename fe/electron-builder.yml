@@ -1,0 +1,39 @@
+# Đóng gói Windows PORTABLE (.exe chạy trực tiếp, không cài đặt, không registry).
+# Build: npm run dist:win  → release/LAN Chat-1.0.0.exe
+appId: local.lanchat.client
+productName: LAN Chat
+artifactName: "${productName}-${version}.${ext}"
+copyright: LAN Chat
+directories:
+  output: release
+  buildResources: build
+files:
+  - electron/**
+  - preload/**
+  - shared/**
+  - ipc/**
+  - dist/ui/**
+  - build/tray-icon.png
+  - build/icon.png
+  - package.json
+  - "!**/*.map"
+  - "!**/test/**"
+# better-sqlite3 dùng N-API prebuild (prebuilds/win32-x64.node) → không cần rebuild cho Electron
+npmRebuild: false
+asar: true
+asarUnpack:
+  - node_modules/better-sqlite3/**
+extraResources: []
+win:
+  target:
+    - target: portable
+      arch:
+        - x64
+  icon: build/icon.ico
+  # Không ký số, không cập nhật tự động (offline 100%)
+  signExecutable: false
+portable:
+  # Giải nén vào thư mục tạm khi chạy; dữ liệu vẫn nằm cạnh .exe (PORTABLE_EXECUTABLE_DIR)
+  unicode: true
+  requestExecutionLevel: user
+publish: null
