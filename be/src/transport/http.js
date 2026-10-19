@@ -217,7 +217,7 @@ function createHttpHandler(deps) {
     },
   ];
 
-  routes.push(...createAdminLogRoutes({ logAggregator: services.logAggregator, logger }));
+  routes.push(...createAdminLogRoutes({ logAggregator: services.logAggregator, memberDirectory: services.memberDirectory, logger, config }));
 
   function matchRoute(method, pathname) {
     let pathMatched = false;

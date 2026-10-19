@@ -29,6 +29,7 @@ const { createSyncService } = require('../modules/sync/syncService');
 const { createAdminService } = require('../modules/admin/adminService');
 const { createPresenceService } = require('../modules/presence/presenceService');
 const { createLogAggregator } = require('../modules/log/logAggregator');
+const { createMemberDirectory } = require('../modules/admin/memberDirectory');
 const { createPeerDiscoveryBroadcast } = require('../modules/presence/peerDiscoveryBroadcast');
 const { createHub } = require('./hub');
 const { createHttpHandler } = require('../transport/http');
@@ -69,7 +70,8 @@ function createServices({ config, paths, repos, logger, hub, tokenService }) {
   const presence = createPresenceService({ hub, access, repos, logger });
   const logAggregator = createLogAggregator({ repos, paths, config, logger, serverWriter: logger.writer });
   const sync = createSyncService({ repos, hub, logger, config, messageService: message, conversationService: conversation, fileService: file, authService: auth });
-  return { access, message, conversation, auth, file, admin, presence, logAggregator, sync };
+  const memberDirectory = createMemberDirectory({ repos, hub });
+  return { access, message, conversation, auth, file, admin, presence, logAggregator, memberDirectory, sync };
 }
 
 /** Lắng nghe cổng; lỗi (EADDRINUSE...) → reject với thông báo rõ. */

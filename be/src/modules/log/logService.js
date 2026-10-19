@@ -7,7 +7,7 @@
  * - Level: debug < info < warn < error < audit. audit luôn được ghi.
  * - Dòng level audit/error đồng thời ghi vào bảng audit_log.
  * - Redact đệ quy các khóa nhạy cảm (password/token/secret/authorization).
- * - Nội dung tin nhắn KHÔNG log trừ khi logging.logMessageContent = true (khi đó chỉ content_preview ≤ 100 ký tự).
+ * - Nội dung tin nhắn: ghi đầy đủ khi logging.logMessageContent = true (mặc định), false → không ghi.
  */
 'use strict';
 
@@ -16,7 +16,6 @@ const path = require('path');
 const crypto = require('crypto');
 const { currentRequestIp } = require('../../core/requestContext');
 const C = require('../../shared/constants');
-const { previewText } = require('../../shared/serializer');
 
 const REDACTED = '[REDACTED]';
 const MAX_REDACT_DEPTH = 8;
@@ -227,12 +226,12 @@ function createLogService(options) {
   }
 
   /**
-   * Meta cho nội dung tin nhắn: chỉ khi bật logMessageContent, tối đa 100 ký tự.
+   * Meta cho nội dung tin nhắn: toàn bộ nội dung khi bật logMessageContent, rỗng khi tắt.
    * @param {string} content
    */
   function contentMeta(content) {
     if (!cfg.logMessageContent || !content) return {};
-    return { content_preview: previewText(content, cfg.contentPreviewMax || C.LOG_CONTENT_PREVIEW_MAX) };
+    return { content: String(content).slice(0, C.MESSAGE_MAX_LENGTH) };
   }
 
   function runCleanup() {

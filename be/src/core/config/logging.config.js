@@ -2,7 +2,8 @@
  * Cấu hình log mặc định của server.
  * - level: mức tối thiểu ghi ra file (audit luôn được ghi).
  * - consoleLevel: mức tối thiểu in ra console ('none' = tắt). Mặc định chỉ in lỗi.
- * - logMessageContent: false → KHÔNG ghi nội dung tin nhắn; true → meta.content_preview ≤ 100 ký tự.
+ * - logMessageContent: true → ghi TOÀN BỘ nội dung tin nhắn khi gửi / sửa (kèm nội dung cũ) / thu hồi
+ *   (thu hồi xóa nội dung khỏi DB, nhật ký là nơi duy nhất còn giữ). false → không ghi nội dung.
  */
 'use strict';
 
@@ -15,8 +16,7 @@ const loggingConfig = Object.freeze({
   rotateSizeBytes: 10 * 1024 * 1024, // 10MB → -1.jsonl, -2.jsonl...
   cleanupIntervalMs: 24 * 60 * 60 * 1000,
   redactKeys: C.LOG_REDACT_KEYS,
-  logMessageContent: false,
-  contentPreviewMax: C.LOG_CONTENT_PREVIEW_MAX,
+  logMessageContent: true,
   clientLogDedupMax: 100000, // số log_id client giữ lại để chống ghi trùng
 });
 

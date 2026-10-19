@@ -181,6 +181,14 @@ const MIGRATIONS = [
       db.exec(SCHEMA_V2_TABLES);
     },
   },
+  {
+    version: 3,
+    up: (db) => {
+      // Trang Quản lý thành viên: lần đăng nhập gần nhất + IP
+      addColumnIfMissing(db, 'users', 'last_login_at', 'TEXT');
+      addColumnIfMissing(db, 'users', 'last_login_ip', 'TEXT');
+    },
+  },
 ];
 
 /**

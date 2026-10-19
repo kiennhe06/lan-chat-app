@@ -9,6 +9,9 @@
  */
 function createConversationRepo(db) {
   const stmts = {
+    countGroupsByUser: db.prepare(`
+      SELECT m.user_id, COUNT(*) AS groups_count FROM conversation_members m
+      JOIN conversations c ON c.id = m.conversation_id AND c.type = 'group' GROUP BY m.user_id`),
     insert: db.prepare(`
       INSERT INTO conversations (type, name, owner_id, direct_key, created_by, client_temp_id, version,
         name_updated_at, name_updated_by, created_at, updated_at)
@@ -85,6 +88,8 @@ function createConversationRepo(db) {
     addPin: (convId, cmid, userId, now) => stmts.addPin.run(convId, cmid, userId, now).changes,
     removePin: (convId, cmid) => stmts.removePin.run(convId, cmid).changes,
     listPins: (convId) => stmts.listPins.all(convId),
+    /** Số nhóm mỗi user đang tham gia. */
+    countGroupsByUser: () => stmts.countGroupsByUser.all(),
 
     /** Chạy fn trong 1 transaction SQLite. */
     transaction: (fn) => db.transaction(fn)(),
