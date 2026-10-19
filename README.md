@@ -3,7 +3,7 @@
 Hệ thống chat nội bộ cho văn phòng **không có internet**, chỉ kết nối qua **mạng LAN**.
 
 > ## 2 RULE BẮT BUỘC
-> 1. **Portable — không cần cài đặt.** Client là 1 file `LAN Chat-1.0.0.exe`, server là 1 thư mục zip chạy bằng Node portable kèm theo. Không ghi registry, không ghi `%APPDATA%`; mọi dữ liệu nằm trong thư mục `data/` cạnh file chạy.
+> 1. **Portable — không cần cài đặt.** Client là 1 file `LAN-Chat-1.0.0.exe`, server là 1 thư mục zip chạy bằng Node portable kèm theo. Không ghi registry, không ghi `%APPDATA%`; mọi dữ liệu nằm trong thư mục `data/` cạnh file chạy.
 > 2. **Máy không có internet — chỉ LAN.** Runtime offline 100%: không CDN, không font online, không analytics, không auto-update. Server tự quảng bá qua UDP broadcast, client cũng nhập IP thủ công được. Khi server tắt, các client vẫn chat P2P với nhau và tự đồng bộ lại khi server online.
 
 ## Cấu trúc
@@ -25,30 +25,58 @@ Bản copy nằm ở `fe/shared/` (không dùng symlink vì lỗi khi build trê
 npm run sync:shared
 ```
 
-## Build (máy CÓ internet, chỉ làm 1 lần)
+## Tải bản dựng sẵn (không cần build)
+
+File `.exe` và zip server **không nằm trong mã nguồn** (git). Tải ở trang Releases:
+**https://github.com/kiennhe06/lan-chat-app/releases** → `LAN-Chat-1.0.0.exe`, `LANChat-Server-1.0.0-win-x64.zip`, `HUONG-DAN-SU-DUNG.txt`.
+
+## Xem giao diện khi chưa muốn build (cần Node 22+)
+
+Cách 1: chỉ giao diện, dùng **dữ liệu giả**, không cần server. Mở trình duyệt vào http://127.0.0.1:5173,
+đăng nhập bằng `an.nv` (hoặc `NV001`) với mật khẩu bất kỳ từ 6 ký tự:
 
 ```bash
-cd server && npm ci && npm run package:win
+cd fe && npm ci && npm run dev:renderer
+```
+
+Cách 2: app thật (cửa sổ Electron) + server thật, mở 2 terminal:
+
+```bash
+cd be && npm ci && npm start
 ```
 
 ```bash
-cd client && npm ci && npm run electron:rebuild && npm run dist:win
+cd fe && npm ci && npm run dev
 ```
 
-- `better-sqlite3` (v13) và `bcrypt` (v6) dùng **N-API prebuild** có sẵn cho `win32-x64` trong package → cùng 1 binary chạy cho cả Node lẫn Electron, không cần Visual Studio Build Tools. `electron:rebuild` chỉ kiểm tra binary có mặt.
+App mở ra → chọn server `127.0.0.1`, cổng `5001` → Đăng ký. Trang nhật ký: http://localhost:5001/admin
+
+## Build ra file `.exe` / zip (máy CÓ internet)
+
+```bash
+cd fe && npm ci && npm run dist:win
+```
+
+→ `fe/release/LAN-Chat-1.0.0.exe`
+
+```bash
+cd be && npm ci && npm run package:win
+```
+
+→ `be/dist/LANChat-Server-1.0.0-win-x64.zip` (tự tải kèm Node 22 portable)
+
+- Build được trên Windows, macOS hoặc Linux, không cần Visual Studio: `better-sqlite3` (v13) và `bcrypt` (v6) dùng **N-API prebuild** có sẵn cho `win32-x64`.
 - `sharp` (chỉ server) được cài bản `win32-x64` bởi `package-win.js` (`npm install --os=win32 --cpu=x64`).
-
-Kết quả: `be/dist/LANChat-Server-1.0.0-win-x64.zip` và `fe/release/LAN Chat-1.0.0.exe`. Copy 2 file này sang máy LAN bằng USB.
+- Test: `cd be && npm test`, `cd fe && npm test`.
 
 ## Triển khai (máy offline)
 
 | Máy | Chạy gì |
 |---|---|
-| Manager | Giải nén zip server → double-click `start-server.vbs` (chạy ẩn) hoặc `start-server.bat` (có console). Sau đó double-click `LAN Chat-1.0.0.exe` |
-| Nhân viên | Chỉ double-click `LAN Chat-1.0.0.exe` |
+| Máy chủ | Giải nén zip server → bấm đúp `start-server.bat` (lần sau có thể dùng `start-server.vbs` để chạy ẩn). Sau đó bấm đúp `LAN-Chat-1.0.0.exe` |
+| Nhân viên | Copy `LAN-Chat-1.0.0.exe` vào một thư mục riêng → bấm đúp |
 
-Mở firewall Windows (chạy CMD quyền Admin một lần trên mỗi máy) — chi tiết trong `be/README.md`:
-- Server: TCP 5001, UDP 41234
-- Client: TCP 5002, UDP 5003
+Không cần quyền admin. Chỉ máy chủ cần cho phép kết nối vào TCP 5001: kiểm tra bằng cách mở
+`http://<IP-máy-chủ>:5001/health` từ máy khác (chi tiết: mục C3 trong `docs/HUONG-DAN-SU-DUNG.txt`).
 
-Người dùng đăng ký **đầu tiên** trên server trở thành **manager** (xem log, chặn IP).
+Người dùng đăng ký **đầu tiên** trên server trở thành **manager** (chặn IP). Nhật ký hoạt động chỉ xem trên máy chủ: `http://localhost:5001/admin`.
