@@ -1,0 +1,37 @@
+{
+  "name": "lan-chat-app",
+  "productName": "LAN Chat",
+  "version": "1.0.0",
+  "private": true,
+  "description": "LAN Chat client — Electron portable .exe, chạy offline trong LAN, hỗ trợ P2P khi server offline.",
+  "main": "electron/main.js",
+  "author": "LAN Chat",
+  "scripts": {
+    "dev": "concurrently -k -n renderer,electron \"npm:dev:renderer\" \"npm:dev:electron\"",
+    "dev:renderer": "vite --config ui/vite.config.mjs",
+    "dev:electron": "wait-on tcp:127.0.0.1:5173 && electron . --dev-server=http://127.0.0.1:5173",
+    "start": "electron .",
+    "build:renderer": "vite build --config ui/vite.config.mjs",
+    "electron:rebuild": "node scripts/check-native.js",
+    "dist:win": "npm run build:renderer && electron-builder --win portable --x64",
+    "sync:shared": "node ../scripts/sync-shared.js",
+    "test": "node --test test/"
+  },
+  "dependencies": {
+    "better-sqlite3": "^13.0.3",
+    "ws": "^8.22.0"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^6.1.2",
+    "autoprefixer": "^10.6.1",
+    "concurrently": "^10.0.6",
+    "electron": "^44.9.0",
+    "electron-builder": "^26.15.3",
+    "postcss": "^8.5.30",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
+    "tailwindcss": "^3.4.19",
+    "vite": "^8.3.4",
+    "wait-on": "^9.5.1"
+  }
+}
