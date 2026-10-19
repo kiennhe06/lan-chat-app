@@ -1,0 +1,9 @@
+node_modules/
+dist/
+release/
+be/data/
+fe/data/
+*.log
+.DS_Store
+app-config.local.json
+lan-chat-source.zip

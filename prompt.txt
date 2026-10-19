@@ -1,0 +1,696 @@
+Vai trò
+Bạn là kỹ sư phần mềm chuyên nghiệp, có kinh nghiệm xây dựng ứng dụng desktop Electron + Node.js. Viết code production-ready, comment tiếng Việt, tuân thủ kiến trúc phân lớp.
+
+Nhiệm vụ
+Viết 2 codebase độc lập cho một hệ thống LAN Chat:
+
+server/ — Node.js project thuần, chạy node index.js, không Electron, không UI. Đóng gói dạng folder (zip), copy sang máy Server, chạy trực tiếp bằng Node.
+
+client/ (tên folder lan-chat-app/) — Electron app, đóng gói .exe portable, chạy trên mọi máy (kể cả máy Server).
+
+Hai bên giao tiếp qua WebSocket. Client có thêm khả năng P2P mesh để chat khi server offline.
+
+1. Kiến trúc tổng quan
+1.1. Hai artifact độc lập
+text
+┌───────────────────────────────────────┐         ┌───────────────────────────────────────┐
+│  SERVER (máy manager)                 │         │  CLIENT (mọi máy)                     │
+│  Folder: LANChat-Server/              │         │  File: LAN Chat-1.0.0.exe             │
+│                                       │         │                                       │
+│  • Node.js runtime (portable)         │◄──WS───►│  • Electron main process              │
+│  • better-sqlite3 (Node ABI)          │  :5001  │  • better-sqlite3 (Electron ABI)      │
+│  • bcrypt (Node ABI)                  │         │  • React renderer                     │
+│  • sharp (Node ABI)                   │         │  • SQLite local DB                    │
+│  • ws, http server                    │◄──P2P──►│  • SQLite local DB                    │
+│  • Không UI, không tray               │  :5002  │  • UI chat + tray                     │
+│  • Không Electron                     │         │                                       │
+│                                       │         │  • Có thể chat P2P khi server offline│
+│  DB: LANChat-Server/data/server.db    │         │  DB: cạnh .exe data/client.db         │
+└───────────────────────────────────────┘         └───────────────────────────────────────┘
+1.2. Deployment
+Máy	Chạy gì	Cách chạy
+Manager	Server + Client	1. node LANChat-Server/index.js (hoặc start-server.vbs ẩn)
+2. Double-click LAN Chat.exe
+Nhân viên	Chỉ Client	Double-click LAN Chat.exe
+1.3. Build-time vs Runtime
+Build-time (máy có internet):
+
+Server: cd server && npm ci → không cần electron-rebuild (build cho Node ABI sẵn) → zip folder server/ (bao gồm node_modules/ và portable Node).
+
+Client: cd lan-chat-app && npm ci && npm run electron:rebuild && npm run build:renderer && npx electron-builder --win portable.
+
+Runtime (máy offline LAN):
+
+Server: extract zip → chạy node index.js (dùng Node bundled hoặc Node cài sẵn).
+
+Client: chạy .exe trực tiếp.
+
+1.4. Shared code strategy
+Có 3 file cần đồng bộ giữa 2 codebase:
+
+shared/constants.js
+
+shared/wsEvents.js
+
+shared/validators.js
+
+Chiến lược: Duplicate ở cả 2 project (server/shared/ và lan-chat-app/src/shared/). Không dùng symlink (gây lỗi trên Windows build). Ghi trong README: khi sửa file shared ở 1 bên, phải copy sang bên kia ngay. Có script scripts/sync-shared.js (npm script sync:shared) để tự copy 3 file này.
+
+2. Yêu cầu chức năng (giữ nguyên từ bản trước)
+2.1. Xác thực người dùng
+3 định danh tách biệt:
+
+Trường	Dùng cho	Ràng buộc
+Username	Đăng nhập	Unique, ASCII [a-zA-Z0-9_.-]{3,30}, không khoảng trắng, case-insensitive khi so sánh, lưu case gốc
+Employee ID	Đăng nhập (thay username được) + search	Unique, ASCII [a-zA-Z0-9_.-]+, tối đa 30 ký tự, index
+Display Name	Hiển thị UI	Không unique, Unicode, NFC, collapse spaces, 1–50 ký tự
+Password:
+
+ASCII printable /^[\x20-\x7E]+$/, dài 6–64, không trim trước hash.
+
+bcrypt rounds=10.
+
+Hint UI rõ: "Mật khẩu chỉ dùng chữ không dấu, số và ký tự đặc biệt."
+
+Strength meter.
+
+Chuẩn hóa input (Client UX → Server validate → Login, cả 3 nơi):
+
+trim() username/employee_id/display_name; collapse spaces display_name.
+
+Reject nếu sau trim có khoảng trắng giữa (username/employee_id).
+
+NFC normalize display_name.
+
+Empty check sau trim → error rõ.
+
+Login:
+
+1 ô nhập username HOẶC employee_id + password.
+
+Case-insensitive cho identifier. Password exact sau hash.
+
+Thất bại → "Sai tên đăng nhập hoặc mật khẩu".
+
+Checkbox "Ghi nhớ đăng nhập lần sau": tick → lưu token client.db, auto-reconnect; không tick → token chỉ trong memory.
+
+Hồ sơ: Đổi avatar (upload → server sharp 256×256 → broadcast), đổi display_name. Không đổi username/employee_id qua UI. Đổi password (old + new + confirm).
+
+UI Login/Register:
+
+Label rõ cho từng input (label trên, input dưới).
+
+Reset form khi chuyển Login ↔ Register (không carry password).
+
+Dark mode CSS variables.
+
+Server discovery list từ UDP + nhập IP thủ công.
+
+2.2. Chat
+Chung 1-1 và group:
+
+Text, emoji, ảnh, file.
+
+Online/offline presence.
+
+Typing indicator (throttle 1.5s → "X đang soạn tin…" với 3 chấm động, ẩn sau 3s).
+
+History từ client.db local, phân trang 50/lần.
+
+Infinite scroll: cuộn lên đầu → load thêm 50, giữ vị trí màn hình.
+
+Cuộn thông minh: mở conv → cuộn xuống; gửi tin khi scroll → cuộn xuống; nhận tin khi scroll → hiện nút tròn mũi tên xuống.
+
+Sửa tin: nhãn "(đã sửa)".
+
+Thu hồi: "Tin nhắn đã được thu hồi".
+
+Reply: quote 2 dòng + ellipsis, click → scroll + highlight vàng 1.5s.
+
+Copy: menu 3 chấm, copy âm thầm (không alert).
+
+Mention (@): gõ @ trong group → dropdown gợi ý members → chèn @Tên. Highlight màu primary.
+
+Search trong conversation: icon 🔍 header → panel → gõ từ khóa → danh sách → click → scroll tới.
+
+UI bubble:
+
+Own: phải, primary. Other: trái, xám.
+
+Word break, overflow-wrap: anywhere.
+
+Nút 3 chấm chỉ hiện hover, căn giữa theo chiều dọc (align-items: center).
+
+Menu: Copy, Reply, Sửa (text), Ghim (owner/admin group), Thu hồi.
+
+Message status:
+
+Sent: 1 vòng tròn rỗng + tick xám.
+
+Delivered: 1 vòng tròn đặc + tick trắng (primary).
+
+Read (1-1): avatar tròn người nhận (fallback: circle + chữ cái đầu).
+
+Read (group): stack 3 avatar + "+N" + text "Đã đọc X/Y".
+
+Chung STATUS_ICON_SIZE = 16 từ shared/constants.js.
+
+Component <MessageStatus status readerId? readers totalMembers isGroup />.
+
+Chỉ tiến: sent → delivered → read.
+
+Icon đặt bên ngoài bong bóng (bên phải cho own), dùng msg-content-wrapper với align-items: flex-end.
+
+Textarea:
+
+<textarea> không <input>.
+
+Tự giãn max 120px, sau đó scroll dọc.
+
+Enter gửi, Shift+Enter xuống dòng.
+
+wordBreak: break-word.
+
+Paste ảnh:
+
+Ctrl+V → preview khung ảnh + nút X đỏ phía trên textarea, không gửi ngay.
+
+Gõ thêm text được.
+
+Gửi → upload → type='image', content = text (nếu có), hiển thị ảnh trên, text dưới, có divider.
+
+Lightbox ảnh:
+
+Thumbnail → click → full màn hình tối rgba(0,0,0,0.95).
+
+Zoom scroll 0.5x–5x, pan kéo chuột.
+
+Toolbar cố định dưới (không bị che): −, %, +, Reset, Tải xuống, Đóng.
+
+Esc đóng.
+
+File:
+
+📎 → chọn → upload XHR với progress.
+
+Tin file: Tải xuống / X% / Hủy / Mở file / Mở thư mục.
+
+Tải xuống: click → hộp thoại dialog.showSaveDialog → chọn vị trí → tải với progress.
+
+local_path lưu local DB. Mở chat: file còn → "Mở file"; không còn → "Tải xuống".
+
+File gốc server (server/data/attachments/), không blob trong SQLite.
+
+Giới hạn 200MB/file, sanitize tên (chống traversal), dedup SHA-256, thumbnail sharp.
+
+2.3. Quản lý nhóm
+3 cấp role: Owner / Admin / Member.
+
+Chức năng:
+
+Tạo nhóm: ≥ 2 người khác ngoài mình. Người tạo = owner.
+
+Đổi tên nhóm: mọi member đều được.
+
+Thêm member: owner/admin → trực tiếp; member → pending chờ duyệt.
+
+Duyệt pending: owner/admin (Duyệt / Từ chối).
+
+Xóa member: owner/admin (không xóa owner). Member bị xóa → nhận conv:deleted.
+
+Set/Hủy phó nhóm: chỉ owner.
+
+Xóa nhóm: chỉ owner.
+
+Ghim tin nhắn: owner/admin. Banner 📌 vàng đầu chat với nội dung + Xem + Bỏ ghim.
+
+Panel thông tin nhóm:
+
+Header: "Thông tin nhóm" + X.
+
+Avatar tròn (#) centered.
+
+Tên nhóm + ✏️ edit inline (input + Lưu/Hủy, Enter lưu, Esc hủy).
+
+Badge role: 👑 Trưởng nhóm (vàng) / ⭐ Phó nhóm (xanh lá) / 👤 Thành viên (xám).
+
+2 nút: 👥 Xem thành viên (N) (badge đỏ "N chờ" nếu có pending) + + Thêm.
+
+Banner đỏ nhỏ nếu pending: "📥 Có N yêu cầu...".
+
+Tabs: Ảnh | Tệp | Link (không có tab Pending).
+
+Content: grid/list, click → scroll tới tin gốc.
+
+Footer cố định: nút 🗑️ Xóa nhóm chỉ owner, style giống nút Đăng xuất (đỏ, transparent, hover underline).
+
+Modal "Xem thành viên":
+
+Danh sách: avatar, tên, employee_id, role badge.
+
+Nút Hạ cấp / Thăng phó nhóm (chỉ owner, không cho owner).
+
+Nút ✕ xóa (owner/admin, không owner, không tự xóa mình).
+
+Pending section dưới danh sách member, divider nét đứt: "📥 Yêu cầu chờ duyệt (N)" + Duyệt/Từ chối.
+
+Backdrop click đóng modal.
+
+Custom ConfirmModal cho mọi confirm (không native confirm).
+
+2.4. Voice Call (TẠM TẮT)
+Đã fix logic useWebRTC.js + CallOverlay.jsx, comment UI trong ChatWindow. Bật lại sau bằng cách bỏ comment 6 chỗ:
+
+imports
+
+hook call
+
+useEffect listener
+
+nút 📞 Gọi
+
+<CallOverlay>
+
+Khi bật lại:
+
+Server có from_name trong CALL_OFFER → B biết ai gọi.
+
+onOffer dùng window.api.dialog.confirm() (không native) → tránh focus trap.
+
+Toàn bộ try/catch + cleanup mic.
+
+2.5. Settings
+Tab Cá nhân: Info, theme ☀️/🌙 (persist DB), đổi password (old/new/confirm).
+
+Tab Log (manager): Filter level/category/action, bảng (time, level, action, username + display + id, IP, meta), nút "Mở thư mục log" + "Export .jsonl".
+
+Tab Chặn IP (manager): Form IP + lý do + Chặn. Bảng (IP, lý do, ngày, Bỏ chặn dùng custom ConfirmModal). Kick client đang dùng IP khi chặn.
+
+Theme: CSS variables :root / html.dark, persist.
+
+2.6. Logging
+Categories: auth, message, file, call, connection, settings, error, app.
+
+Levels: debug < info < warn < error < audit. Audit luôn ship immediate.
+
+Format JSONL: {ts, level, category, user_id, client_id, action, ip?, meta?}.
+
+Server-side:
+
+logAudit(level, category, action, userId, meta, ip) gọi trong server.js.
+
+File JSONL server/data/logs/server/YYYY-MM-DD.jsonl (rotate ngày + size).
+
+DB audit_log: chỉ level audit/error.
+
+Privacy: Không log password/token/file content. Message content mặc định OFF (logging.logMessageContent: false), nếu bật → meta.content_preview max 100 ký tự. Sanitize password, token, secret, authorization.
+
+Rotation: Ngày + size cap 10MB → -1.jsonl, -2.jsonl. Retention 30 ngày.
+
+2.7. Mức 3 — Offline-first P2P
+2.7.1. Peer discovery
+UDP broadcast port 5003 mỗi 5s: {app_name, peer_port: 5002, user_id, display_name, server_online}.
+
+Xóa peer nếu miss 3 lần (15s).
+
+P2P WS server port 5002, chỉ accept IP cùng subnet.
+
+Auth handshake p2p:hello với session_token verify được local.
+
+2.7.2. Auth offline
+Khi login online: server trả session_token (JWT-like hoặc random hex). Client lưu client.db settings, TTL 7 ngày.
+
+Khi server offline: client dùng session_token cache để auth với peer. Hết hạn → phải chờ server online.
+
+Không hỗ trợ login offline bằng password (bcrypt không tính được local mà không expose hash — quá nguy hiểm).
+
+Không hỗ trợ đăng ký user mới offline.
+
+Không hỗ trợ đổi password offline.
+
+2.7.3. Chat 1-1 offline
+A gõ → ghi client.db status='pending', sync_state='pending_peer'.
+
+Check peer B online qua UDP list.
+
+Có → WS tới B:5002, gửi p2p:message với vector_clock.
+
+B insert local sync_state='peer_synced', ACK.
+
+A update sync_state='pending_server', status='sent'.
+
+B không online → giữ pending_peer, retry khi B xuất hiện.
+
+2.7.4. Chat group offline
+Gửi cho tất cả peer online.
+
+Thiếu member → sync_state='partial_peer', không đánh dấu sent cho tới khi đủ hoặc server online.
+
+Ghi p2p_receipts: {user_id: timestamp}.
+
+2.7.5. Vector clock
+Mỗi client giữ {user_id: counter}.
+
+Gửi: tăng counter mình, gửi snapshot.
+
+Nhận: merge max(local[i], received[i]).
+
+Sort tin: (1) server_id nếu có → (2) causal before → (3) concurrent: (created_at_local, sender_id, client_message_id) tie-breaker.
+
+2.7.6. Tạo/sửa nhóm offline
+Tạo: conversation_id local temp-<uuid>, owner_id = mình. Khi server online → push → server trả id thật → update local + broadcast cho members.
+
+Đổi tên: update local version++, sync_state='pending_server'. Khi server online push. Conflict → LWW theo (updated_at, user_id).
+
+2.7.7. File P2P
+Chunks 512KB qua WS binary frames.
+
+B nhận → data/downloads-p2p/<hash>/ → verify SHA-256.
+
+Khi server online → A upload file gốc lên server.
+
+2.7.8. Sync reconciliation
+Trigger khi WS tới server mở lại. Quy trình:
+
+sync:status → số pending.
+
+Batch message sync_state IN ('pending_server', 'peer_synced') → sync:message-batch → server upsert theo client_message_id → trả {server_id, status} → client update 'synced'.
+
+Batch actions (conv_create, rename, member changes) qua action_queue.
+
+Batch file P2P chưa upload.
+
+Conflict 409 → default keep server, log warning.
+
+Toast "Đã đồng bộ N tin, M file".
+
+Progress UI: thanh nhỏ ở header, không block.
+
+2.7.9. UI offline
+Banner vàng: "⚠️ Server offline — Đang chat P2P. Tin sẽ tự đồng bộ khi server online."
+
+Icon trạng thái:
+
+pending_server: 📤 mờ.
+
+pending_peer: ⏳.
+
+partial_peer: 📤 + badge cảnh báo.
+
+Progress sync: "Đồng bộ 15/50 tin...".
+
+3. Yêu cầu phi chức năng
+~20 client đồng thời qua WS server + P2P mesh riêng.
+
+Windows 10/11 x64.
+
+Server: Node.js portable (khuyến nghị bundle node-v20-win-x64/ trong folder, hoặc yêu cầu cài Node system). Folder portable, không registry.
+
+Client: Portable .exe, không registry. Auto-start qua shortcut shell:startup.
+
+Offline 100% runtime — không CDN, không analytics, không auto-update.
+
+WebRTC iceServers: [] (host candidates LAN-only).
+
+Server discovery: UDP broadcast + nhập IP thủ công.
+
+Time sync: server là nguồn duy nhất. Client dùng local time tạm cho pending + P2P.
+
+SQLite WAL mode.
+
+Native modules:
+
+Server: better-sqlite3, bcrypt, sharp build cho Node ABI (chỉ npm install, không electron-rebuild).
+
+Client: better-sqlite3 build cho Electron ABI (electron-rebuild).
+
+4. Kiến trúc phân lớp (cả 2 codebase)
+text
+Presentation (React — chỉ client) → Application (hooks — chỉ client)
+  → IPC Bridge (preload — chỉ client) → Services
+  → Repositories → Database (SQLite)
+Server bỏ qua Presentation + IPC — chỉ có Services → Repositories → Database.
+
+Quy tắc:
+
+Component React không gọi ipcRenderer/fetch/electron trực tiếp — qua hook → preload API.
+
+Service không import React/Electron. Nhận/trả plain object.
+
+Repository không chứa business logic.
+
+Service không query DB — qua repository.
+
+Shared module chỉ types/constants/pure function.
+
+Mọi path qua paths.js (mỗi project có file riêng).
+
+5. Cấu hình tách biệt
+5.1. server/config/ (project server)
+File	Nội dung
+server.config.js	WS 5001, discovery 41234, P2P 5002, P2P discovery 5003, upload limit, bcrypt rounds
+paths.js	BASE_DIR (folder chứa index.js), DATA_DIR = BASE_DIR/data, DB_SERVER, ATTACHMENTS, THUMBNAILS, AVATARS, LOGS_DIR, LOGS_SERVER, CONFIG_FILE (dùng app-config.json cạnh index.js)
+logging.config.js	Level, retention, rotate size, ship, redact keys
+configLoader.js	Merge priority: env → app-config.json → default. Tự sinh nếu thiếu.
+5.2. lan-chat-app/src/main/config/ (project client)
+File	Nội dung
+paths.js	BASE_DIR = PORTABLE_EXECUTABLE_DIR hoặc dirname(process.execPath), DATA_DIR, DB_CLIENT, LOGS_DIR, LOGS_CLIENTS, DEFAULT_DOWNLOAD, CONFIG_FILE (cạnh .exe), P2P_DOWNLOADS
+configLoader.js	Như server, đọc app-config.json cạnh .exe
+5.3. shared/ (duplicate ở cả 2 project)
+constants.js: STATUS_ICON_SIZE=16, MAX_GROUP_READER_AVATARS=3, PAGE_SIZE=50, MESSAGE_STATUS, MESSAGE_TYPE, GROUP_ROLE, LOG_LEVEL, LOG_CATEGORY, USERNAME_MIN/MAX, DISPLAY_NAME_MAX, PASSWORD_MIN/MAX, EMPLOYEE_ID_MAX, USERNAME_REGEX, PASSWORD_ASCII_REGEX.
+
+wsEvents.js: đầy đủ events (auth, message, conv, group, pin, call, sync, p2p, log, admin).
+
+validators.js: normalizeUsername, normalizeEmployeeId, normalizeDisplayName, validatePassword, normalizeLoginInput.
+
+Nghiêm cấm magic string/number/path. Script sync:shared copy 3 file từ server/shared/ → lan-chat-app/src/shared/.
+
+6. Cấu trúc dự án
+6.1. Server folder
+text
+LANChat-Server/
+├── package.json                    ← deps: better-sqlite3, bcrypt, sharp, ws
+├── index.js                        ← entry: node index.js
+├── app-config.json                 ← runtime config (server side)
+├── start-server.vbs                ← chạy ẩn không console
+├── start-server.bat                ← chạy có console để debug
+├── node/                           ← Node.js portable (khuyến nghị bundle)
+│   └── node.exe, npm.cmd, ...
+├── config/
+│   ├── server.config.js
+│   ├── paths.js
+│   ├── logging.config.js
+│   └── configLoader.js
+├── db/
+│   ├── database.js                 ← chỉ mở server.db, không client.db
+│   └── repositories/
+│       ├── userRepo.js
+│       ├── messageRepo.js
+│       ├── fileRepo.js
+│       ├── conversationRepo.js
+│       ├── blockedIpRepo.js
+│       ├── auditLogRepo.js
+│       ├── actionQueueRepo.js
+│       └── vectorClockRepo.js
+├── services/
+│   ├── authService.js
+│   ├── messageService.js
+│   ├── fileService.js
+│   ├── syncService.js
+│   ├── logService.js
+│   ├── logAggregator.js
+│   └── peerDiscoveryBroadcast.js   ← server cũng broadcast presence cho client biết server online
+├── http.js                         ← HTTP routes (/upload, /download, /thumb, /avatar)
+├── ws.js                           ← WS server, route → service
+├── discovery.js                    ← UDP broadcast port 41234
+├── shared/                         ← copy từ sync-shared
+│   ├── constants.js
+│   ├── wsEvents.js
+│   ├── validators.js
+│   └── serializer.js
+├── data/                           ← tự sinh runtime
+│   ├── server.db
+│   ├── attachments/
+│   ├── thumbnails/
+│   ├── avatars/
+│   └── logs/server/
+└── README.md                       ← cách chạy server, mở port, backup
+6.2. Client folder
+text
+lan-chat-app/
+├── package.json                    ← deps: electron, react, better-sqlite3, ws (client P2P), etc
+├── electron-builder.yml
+├── app-config.json                 ← runtime config (client side, cạnh .exe)
+├── build/
+│   ├── icon.png
+│   ├── icon.ico
+│   └── tray-icon.png
+├── src/
+│   ├── main/
+│   │   ├── index.js                ← KHÔNG phân nhánh --server-only nữa — chỉ client
+│   │   ├── p2p.js                  ← P2P WS server port 5002
+│   │   ├── peerDiscovery.js        ← UDP listen port 5003
+│   │   ├── peerRegistry.js
+│   │   ├── syncClient.js           ← reconciliation khi server online
+│   │   ├── config/
+│   │   │   ├── paths.js
+│   │   │   └── configLoader.js
+│   │   ├── db/
+│   │   │   ├── database.js         ← chỉ mở client.db
+│   │   │   └── repositories/
+│   │   │       ├── messageRepo.js  ← client-side
+│   │   │       ├── userCacheRepo.js
+│   │   │       ├── conversationCacheRepo.js
+│   │   │       ├── actionQueueRepo.js
+│   │   │       ├── peersRepo.js
+│   │   │       └── vectorClockRepo.js
+│   │   ├── services/
+│   │   │   ├── logService.js       ← log local + ship lên server
+│   │   │   ├── p2pService.js
+│   │   │   └── syncService.js      ← client-side sync logic
+│   │   └── ipc/
+│   │       ├── fileHandlers.js
+│   │       ├── logHandlers.js
+│   │       ├── settingsHandlers.js
+│   │       └── dbHandlers.js
+│   ├── preload/index.js
+│   ├── shared/                     ← copy từ sync-shared
+│   │   ├── constants.js
+│   │   ├── wsEvents.js
+│   │   ├── validators.js
+│   │   └── serializer.js
+│   └── renderer/
+│       ├── index.html
+│       ├── tailwind.config.js (root)
+│       ├── postcss.config.js (root)
+│       ├── vite.config.js
+│       └── src/
+│           ├── App.jsx
+│           ├── main.jsx
+│           ├── index.css
+│           ├── config/
+│           │   ├── constants.js
+│           │   ├── wsEvents.js
+│           │   └── app.config.js
+│           ├── assets/fonts/
+│           ├── components/
+│           │   ├── LoginPage.jsx
+│           │   ├── ChatWindow.jsx
+│           │   ├── MessageStatus.jsx
+│           │   ├── FileMessage.jsx
+│           │   ├── ImageMessage.jsx
+│           │   ├── CreateConversation.jsx
+│           │   ├── GroupInfoPanel.jsx
+│           │   ├── Settings.jsx
+│           │   ├── AdminLogViewer.jsx
+│           │   ├── AdminIpManager.jsx
+│           │   ├── ConfirmModal.jsx
+│           │   ├── ConnectionBanner.jsx
+│           │   ├── CallOverlay.jsx        ← tạm comment usage
+│           │   └── SyncProgressBar.jsx
+│           ├── context/
+│           ├── hooks/
+│           │   ├── useSocket.js
+│           │   ├── useWebRTC.js           ← tạm comment usage
+│           │   ├── useChatHistory.js
+│           │   ├── useFileDownload.js
+│           │   ├── useServerDiscovery.js
+│           │   ├── useOfflineQueue.js
+│           │   ├── useP2P.js
+│           │   ├── useVectorClock.js
+│           │   └── useLogger.js
+│           └── db/localDb.js
+└── README.md
+6.3. Data folder (runtime, tách biệt)
+Server: LANChat-Server/data/
+
+text
+server.db, attachments/, thumbnails/, avatars/, logs/server/
+Client: <thư mục chứa .exe>/data/
+
+text
+client.db, downloads/, logs/clients/, (avatars/ nếu cache local)
+7. Database schema
+7.1. Server DB (LANChat-Server/data/server.db)
+Giống bản trước, không có client.db trong server folder. Bổ sung cho Mức 3:
+
+sql
+ALTER TABLE messages ADD COLUMN vector_clock TEXT;
+ALTER TABLE conversations ADD COLUMN version INTEGER DEFAULT 1;
+ALTER TABLE conversations ADD COLUMN client_temp_id TEXT;
+7.2. Client DB (data/client.db cạnh .exe)
+Giống bản trước, bổ sung cho Mức 3:
+
+sql
+ALTER TABLE messages ADD COLUMN vector_clock TEXT;
+ALTER TABLE messages ADD COLUMN p2p_receipts TEXT;
+ALTER TABLE messages ADD COLUMN created_at_local TEXT;
+
+ALTER TABLE conversations_cache ADD COLUMN version INTEGER DEFAULT 1;
+ALTER TABLE conversations_cache ADD COLUMN sync_state TEXT DEFAULT 'synced';
+ALTER TABLE conversations_cache ADD COLUMN client_temp_id TEXT;
+
+CREATE TABLE IF NOT EXISTS peers_cache (
+  user_id INTEGER PRIMARY KEY, display_name TEXT, last_ip TEXT, last_port INTEGER,
+  last_seen TEXT, server_online INTEGER DEFAULT 0, session_token TEXT
+);
+CREATE TABLE IF NOT EXISTS vector_clock (user_id INTEGER PRIMARY KEY, counter INTEGER DEFAULT 0);
+CREATE TABLE IF NOT EXISTS action_queue (
+  id INTEGER PRIMARY KEY AUTOINCREMENT, action_type TEXT NOT NULL, payload TEXT NOT NULL,
+  vector_clock TEXT, created_at TEXT NOT NULL, retry_count INTEGER DEFAULT 0, last_error TEXT
+);
+CREATE TABLE IF NOT EXISTS p2p_files (
+  file_hash TEXT PRIMARY KEY, local_path TEXT NOT NULL, file_size INTEGER, mime_type TEXT,
+  received_from_user_id INTEGER, received_at TEXT, uploaded_to_server INTEGER DEFAULT 0
+);
+8. WebSocket events
+Auth: register/ok/err, login/ok/err, reconnect, disconnect, user:created.
+
+Messages: send, new, edit/edited, recall/recalled, status_update, read, pin, unpin.
+
+Conversations: created, updated, deleted, rename, addMember(+Result), approveMember, rejectMember, removeMember, setAdmin, delete, requestPending, pendingList, memberPending, pinned, unpinned.
+
+Sync: request, response, ack, status, message-batch(-ack), action-batch(-ack), file-batch.
+
+P2P: hello, hello-ack, message(-ack), message-edit, message-recall, file-start, file-chunk, file-complete, file-ack, typing, presence.
+
+Presence/typing: presence, typing.
+
+WebRTC (tạm tắt): call:offer/answer/ice-candidate/end.
+
+Logging: log:event, log:batch, log:ack, log:query, log:query:result.
+
+Admin: listBlocked, blockIp, unblockIp, blockedList, blockIpResult, unblockIpResult.
+
+Tất cả import từ shared/wsEvents.js — không gõ chuỗi trực tiếp.
+
+9. Chất lượng mã
+Comment tiếng Việt cho logic phức tạp.
+
+JSDoc cho public API.
+
+try/catch mọi I/O/network/DB.
+
+Idempotent sync: client_message_id, log_id, vector_clock.
+
+Không lưu file SQLite (không blob).
+
+Không copy file vào thư mục app khi gửi.
+
+Backup data/attachments/ định kỳ (README).
+
+Không CDN, không analytics, không auto-update.
+
+Test trên máy offline thật — checklist README.
+
+UI hiển thị history không phụ thuộc server.
+
+Body style cleanup: mọi effect set document.body.style phải có cleanup + reset trên unmount (tránh stuck input khi logout).
+
+Không native confirm()/alert() cho interactive — dùng custom ConfirmModal hoặc window.api.dialog (native chỉ cho alert đơn giản).
+
+Message status icon ngoài bong bóng (dùng msg-content-wrapper), nút 3 chấm căn giữa.
+
+Reply quote 2 dòng + ellipsis.
+
+Chỉ tiến state: sent → delivered → read.
