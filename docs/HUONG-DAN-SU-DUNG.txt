@@ -192,19 +192,24 @@ C4. SAO LƯU DỮ LIỆU
   Đặc biệt giữ thư mục "data\keys": nếu mất thư mục này, mọi người
   phải đăng nhập lại.
 
-C5. XEM NHẬT KÝ HOẠT ĐỘNG CỦA THÀNH VIÊN (chỉ trên máy chủ)
+C5. QUẢN LÝ THÀNH VIÊN & XEM NHẬT KÝ (chỉ trên máy chủ)
   1. Trên MÁY CHỦ (máy đang chạy server), mở Edge hoặc Chrome.
   2. Gõ vào thanh địa chỉ:   http://localhost:5001/admin
-  3. Trang hiện danh sách hoạt động mới nhất ở trên cùng: ai đăng nhập,
+  3. Tab "Thành viên": danh sách mọi tài khoản, ai đang online, đăng nhập
+     lần cuối lúc nào và từ IP nào, đã gửi bao nhiêu tin / file, ở bao
+     nhiêu nhóm. Bấm vào một người để xem toàn bộ nhật ký của người đó.
+  4. Tab "Nhật ký hoạt động": hoạt động mới nhất ở trên cùng: ai đăng nhập,
      ai gửi tin vào nhóm nào, ai gửi/tải file, ai tạo nhóm, thêm/xóa
      thành viên, đăng nhập sai mật khẩu... kèm thời gian và địa chỉ IP.
-  4. Lọc theo thành viên, nhóm hoạt động, ngày, hoặc gõ từ khóa
-     (tên người, tên nhóm, IP, tên file).
-  5. Bấm "Xuất Excel (.csv)" để lưu ra file mở bằng Excel.
+     Có NỘI DUNG tin nhắn, kể cả nội dung trước khi sửa và tin đã thu hồi.
+  5. Lọc theo thành viên, nhóm hoạt động (chọn "Chỉ tin nhắn" để xem
+     riêng tin nhắn), ngày, hoặc gõ từ khóa (tên người, nhóm, IP, nội dung).
+  6. Bấm "Xuất Excel (.csv)" để lưu ra file mở bằng Excel.
 
   Lưu ý:
-  - Nhật ký KHÔNG lưu nội dung tin nhắn, chỉ ghi ai gửi, gửi vào đâu,
-    lúc nào.
+  - Nhật ký CÓ lưu nội dung tin nhắn. Nên thông báo cho nhân viên biết
+    tin nhắn công việc được lưu lại. Muốn tắt: mở app-config.json trong
+    thư mục máy chủ, sửa "logMessageContent": true thành false, chạy lại.
   - Chỉ xem được trên máy chủ. Máy khác gõ địa chỉ này sẽ bị từ chối,
     và lần thử đó cũng được ghi vào nhật ký.
   - Nhật ký được giữ 30 ngày (trong thư mục data\logs của máy chủ).

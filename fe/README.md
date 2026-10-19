@@ -93,7 +93,7 @@ Luồng: IPC handler → service → repository → SQLite. Service không impor
 - Popup/điều hướng ra ngoài bị chặn; link http(s) chỉ mở bằng trình duyệt hệ thống khi người dùng click.
 - Token phiên ký Ed25519 bởi server, client verify local bằng `server_public_key` đã cache → P2P auth khi server offline.
 - P2P chỉ nhận IP cùng subnet / loopback. Peer chỉ được gửi tin của chính mình (sender = user trong token).
-- Log redact `password/token/secret/authorization`; nội dung tin không được log (trừ khi bật `logMessageContent`).
+- Log redact `password/token/secret/authorization`; app không log nội dung tin; nội dung tin được server ghi nhật ký (cấu hình `logging.logMessageContent` của server).
 - "Ghi nhớ đăng nhập" không tick → token chỉ nằm trong RAM. Người khác đăng nhập trên cùng máy → xóa cache tin của tài khoản trước.
 
 ## Checklist test thật (máy offline)
