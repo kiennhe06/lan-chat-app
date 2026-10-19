@@ -18,6 +18,6 @@
     "level": "info",
     "consoleLevel": "error",
     "retentionDays": 30,
-    "logMessageContent": false
+    "logMessageContent": true
   }
 }

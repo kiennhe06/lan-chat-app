@@ -96,8 +96,18 @@ function createAuthService(deps) {
     const user = repos.users.findById(userId);
     const session = createSession(user, ip);
     logger.logAudit(LOG.AUDIT, CAT.AUTH, 'register', user.id, { username: user.username, role: user.role }, ip);
+    recordLogin(user.id, ip);
     hub.toAll(W.USER.CREATED, { user: toWireUser({ ...user, online: false }) });
     return { payload: buildLoginPayload(user, session), user, session: session.payload };
+  }
+
+  /** Ghi lần đăng nhập gần nhất + IP cho trang Quản lý thành viên (lỗi ghi không chặn đăng nhập). */
+  function recordLogin(userId, ip) {
+    try {
+      repos.users.touchLogin(userId, new Date().toISOString(), ip);
+    } catch (err) {
+      logger.warn(CAT.AUTH, 'record_login_failed', { error: err.message }, { userId, ip });
+    }
   }
 
   /** Tìm user theo username trước, rồi employee_id (2 user khác nhau có thể trùng chuỗi ở 2 cột). */
@@ -128,6 +138,7 @@ function createAuthService(deps) {
       if (await bcrypt.compare(password, user.password_hash)) {
         const session = createSession(user, ip);
         logger.logAudit(LOG.AUDIT, CAT.AUTH, 'login_success', user.id, { username: user.username }, ip);
+        recordLogin(user.id, ip);
         return { payload: buildLoginPayload(user, session), user, session: session.payload };
       }
     }
@@ -164,6 +175,7 @@ function createAuthService(deps) {
     let session = { token, payload: auth.session, expiresAt: new Date(auth.session.exp).toISOString() };
     if (remaining < config.auth.tokenRenewThresholdMs) session = createSession(auth.user, ip);
     logger.logAudit(LOG.AUDIT, CAT.AUTH, 'reconnect', auth.user.id, { renewed: session.token !== token }, ip);
+    recordLogin(auth.user.id, ip);
     return { payload: buildLoginPayload(auth.user, session), user: auth.user, session: session.payload };
   }
 

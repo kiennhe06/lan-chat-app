@@ -11,7 +11,7 @@
 'use strict';
 
 const APP_NAME = 'LANChat';
-const APP_VERSION = '1.0.0';
+const APP_VERSION = '1.1.0';
 
 /** Cổng mạng mặc định — có thể override qua app-config.json */
 const NETWORK = Object.freeze({

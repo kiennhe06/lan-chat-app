@@ -261,7 +261,8 @@ Xóa peer nếu miss 3 lần (15s). Bỏ qua gói của chính mình (`instance_
   - `GET /admin/api/logs?user_id&category&min_level&level&action&from&to&q&users_only&limit≤2000` → `{success, logs:[LogEntry + username, display_name, employee_id, conversation_label, file_name, target_names], truncated}`.
   - `GET /admin/api/users`, `GET /admin/api/export?…` (.jsonl).
 - Server tự gắn IP client cho mọi log phát sinh trong lúc xử lý 1 frame WS / request HTTP (`core/requestContext.js`).
-- Không ghi nội dung tin nhắn (`message_sent` chỉ có conversation_id + loại tin), trừ khi bật `logging.logMessageContent`.
+- Nội dung tin nhắn: khi `logging.logMessageContent = true` (mặc định) server ghi `meta.content` đầy đủ cho `message_sent`, `message_edited` (+ `previous_content`) và `message_recalled` (nội dung bị thu hồi). `false` → không ghi.
+- `GET /admin/api/members` → `{members:[{id, username, employee_id, display_name, role, online, created_at, last_login_at, last_login_ip, messages_sent, files_sent, groups_count, last_message_at}]}`; `GET /admin/api/info` → `{log_message_content}`.
 
 ## 10. Admin (chỉ manager)
 

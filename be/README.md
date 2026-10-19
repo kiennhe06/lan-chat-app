@@ -78,7 +78,7 @@ File thiếu → tự sinh với giá trị mặc định. JSON hỏng → serve
   "server": { "host": "0.0.0.0", "port": 5001, "name": "LANChat Server" },
   "discovery": { "enabled": true, "port": 41234, "intervalMs": 3000 },
   "p2p": { "discoveryPort": 5003, "broadcastEnabled": true },
-  "logging": { "level": "info", "consoleLevel": "error", "retentionDays": 30, "logMessageContent": false }
+  "logging": { "level": "info", "consoleLevel": "error", "retentionDays": 30, "logMessageContent": true }
 }
 ```
 
@@ -92,20 +92,26 @@ File thiếu → tự sinh với giá trị mặc định. JSON hỏng → serve
 | `logging.level` | Mức tối thiểu ghi file: `debug` < `info` < `warn` < `error` < `audit` (audit luôn ghi) | `LANCHAT_LOG_LEVEL` |
 | `logging.consoleLevel` | Mức tối thiểu in ra console (`none` = tắt) | `LANCHAT_LOG_CONSOLE_LEVEL` |
 | `logging.retentionDays` | Số ngày giữ log | |
-| `logging.logMessageContent` | `true` → log kèm `content_preview` ≤ 100 ký tự. Mặc định `false` (không log nội dung) | `LANCHAT_LOG_MESSAGE_CONTENT` |
+| `logging.logMessageContent` | Mặc định `true`: log **toàn bộ** nội dung tin khi gửi / sửa (kèm nội dung cũ) / thu hồi. `false` → không log nội dung | `LANCHAT_LOG_MESSAGE_CONTENT` |
 
 Các giới hạn khác (upload 200MB, avatar 10MB, bcrypt rounds 10, session 7 ngày, heartbeat 15s...) nằm trong `config/server.config.js`
 và có thể override bằng cùng khóa trong `app-config.json` (vd. `"upload": { "maxFileSize": 104857600 }`).
 
-### Xem nhật ký hoạt động (chỉ trên máy chủ)
+### Trang quản trị: Thành viên + Nhật ký hoạt động (chỉ trên máy chủ)
 
 Trên **chính máy chạy server**, mở trình duyệt (Edge/Chrome) vào `http://localhost:5001/admin`
-(đổi 5001 nếu đã sửa `server.port`). Trang có lọc theo thành viên / nhóm hoạt động / ngày / từ khóa,
-tự làm mới 30 giây, xuất Excel (.csv) và .jsonl.
+(đổi 5001 nếu đã sửa `server.port`). Có 2 tab:
+
+- **Thành viên**: mọi tài khoản với vai trò, online/offline, lần đăng nhập gần nhất + IP, số tin / file đã gửi,
+  số nhóm, tin gần nhất, ngày tạo; tìm kiếm, xuất Excel. Bấm vào một người → xem toàn bộ nhật ký của người đó.
+- **Nhật ký hoạt động**: lọc theo thành viên / nhóm hoạt động (có lựa chọn "Chỉ tin nhắn") / ngày / từ khóa,
+  tự làm mới 30 giây, xuất Excel (.csv) và .jsonl.
 
 - Máy khác trong LAN mở `http://<IP-máy-chủ>:5001/admin` → **403**, và lần thử đó được ghi log `admin_page_denied`.
 - App chat ở máy nhân viên (kể cả tài khoản manager) **không** có chức năng xem log.
-- Không ghi nội dung tin nhắn — chỉ ghi ai gửi, vào cuộc trò chuyện/nhóm nào, loại tin, lúc nào, IP.
+- **Có ghi nội dung tin nhắn** (mặc định): khi gửi, khi sửa (kèm nội dung trước khi sửa) và khi thu hồi (kèm nội dung bị thu hồi —
+  DB đã xóa nội dung này, nhật ký là nơi duy nhất còn giữ). Tắt bằng `"logging": { "logMessageContent": false }` trong `app-config.json`.
+  **Nên thông báo cho nhân viên** rằng tin nhắn được lưu nhật ký.
 - Ghi lại: đăng nhập / đăng nhập sai / đăng xuất, đăng ký, đổi mật khẩu / tên / avatar, gửi / sửa / thu hồi / ghim tin,
   gửi file, tải file về, tạo nhóm, đổi tên nhóm, thêm / duyệt / xóa thành viên, đổi phó nhóm, xóa nhóm, chặn IP, kết nối / ngắt kết nối.
 

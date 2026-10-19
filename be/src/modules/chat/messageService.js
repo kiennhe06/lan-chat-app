@@ -143,7 +143,7 @@ function createMessageService(deps) {
     logger.info(
       CAT,
       'message_sent',
-      { conversation_id: message.conversation_id, server_id: message.server_id, type: data.type, relayed_by: options.pusherId || undefined, ...logger.contentMeta(data.content) },
+      { conversation_id: message.conversation_id, server_id: message.server_id, type: data.type, file_id: data.file_id || undefined, relayed_by: options.pusherId || undefined, ...logger.contentMeta(data.content) },
       { userId: senderId, ip: options.ip }
     );
     broadcastToConv(conv.id, W.MESSAGE.NEW, { message });
@@ -211,7 +211,13 @@ function createMessageService(deps) {
     if (content.value === row.content) return { message: messageRowToWire(row), changed: false, conflict: false };
     repos.messages.updateContent(cmid, content.value, nowIso());
     const message = getWire(cmid);
-    logger.info(CAT, 'message_edited', { client_message_id: cmid, ...logger.contentMeta(content.value) }, { userId, ip: options.ip });
+    const previous = logger.contentMeta(row.content);
+    logger.info(
+      CAT,
+      'message_edited',
+      { client_message_id: cmid, conversation_id: String(row.conversation_id), ...logger.contentMeta(content.value), ...(previous.content ? { previous_content: previous.content } : {}) },
+      { userId, ip: options.ip }
+    );
     broadcastToConv(row.conversation_id, W.MESSAGE.EDITED, { message });
     return { message, changed: true, conflict: false };
   }
@@ -230,7 +236,8 @@ function createMessageService(deps) {
       unpinned = repos.conversations.removePin(row.conversation_id, cmid) > 0;
     });
     const conversationId = String(row.conversation_id);
-    logger.info(CAT, 'message_recalled', { client_message_id: cmid, conversation_id: conversationId }, { userId, ip: options.ip });
+    // DB đã xóa nội dung khi thu hồi → nhật ký là nơi duy nhất còn giữ nội dung gốc
+    logger.info(CAT, 'message_recalled', { client_message_id: cmid, conversation_id: conversationId, type: row.type, ...logger.contentMeta(row.content) }, { userId, ip: options.ip });
     broadcastToConv(row.conversation_id, W.MESSAGE.RECALLED, { conversation_id: conversationId, client_message_id: cmid });
     if (unpinned) broadcastPins(row.conversation_id, W.CONV.UNPINNED);
     return { ok: true, changed: true };

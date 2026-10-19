@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Nhật ký hoạt động — LAN Chat</title>
+  <title>Quản trị — LAN Chat</title>
   <style>
     :root {
       --bg: #f3f5f9; --surface: #ffffff; --text: #1f2937; --muted: #6b7280; --border: #e5e7eb;
@@ -40,7 +40,7 @@
     .table-wrap { overflow-x: auto; }
     table { width: 100%; border-collapse: collapse; }
     th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--border); vertical-align: top; }
-    th { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: .03em; position: sticky; top: 0; background: var(--surface); }
+    th { white-space: nowrap; font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: .03em; position: sticky; top: 0; background: var(--surface); }
     tbody tr:hover { background: var(--row-hover); }
     td.time { white-space: nowrap; font-variant-numeric: tabular-nums; }
     td.ip { white-space: nowrap; font-family: Consolas, monospace; font-size: 13px; }
@@ -51,16 +51,55 @@
     details summary { cursor: pointer; color: var(--muted); font-size: 12px; }
     pre { margin: 6px 0 0; white-space: pre-wrap; word-break: break-word; font-size: 12px; background: var(--bg); padding: 8px; border-radius: 6px; }
     .empty { text-align: center; color: var(--muted); padding: 32px; }
+    nav.tabs { display: flex; gap: 4px; padding: 0 24px; background: var(--surface); border-bottom: 1px solid var(--border); }
+    nav.tabs button { border: 0; border-bottom: 2px solid transparent; border-radius: 0; background: none; padding: 10px 14px; color: var(--muted); font-weight: 600; }
+    nav.tabs button[aria-selected="true"] { color: var(--primary); border-bottom-color: var(--primary); }
+    .stats { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 14px; }
+    .stat { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 10px 16px; min-width: 150px; }
+    .stat b { display: block; font-size: 22px; }
+    .stat span { color: var(--muted); font-size: 12px; }
+    .dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 6px; background: var(--lv-debug); }
+    .dot.on { background: #16a34a; }
+    .role { white-space: nowrap; font-size: 11px; font-weight: 700; padding: 1px 7px; border-radius: 999px; background: var(--lv-audit); color: #fff; }
+    tr.clickable { cursor: pointer; }
+    td.num { text-align: right; font-variant-numeric: tabular-nums; }
+    .content { white-space: pre-wrap; word-break: break-word; background: var(--bg); border-left: 3px solid var(--primary); padding: 4px 8px; border-radius: 4px; margin-top: 4px; }
+    .content.old { border-left-color: var(--lv-warn); }
+    .toolbar { display: flex; gap: 10px; align-items: center; margin-bottom: 10px; flex-wrap: wrap; }
+    .toolbar input { flex: 1; min-width: 220px; }
   </style>
 </head>
 <body>
   <header>
-    <h1>📋 Nhật ký hoạt động — LAN Chat</h1>
-    <span class="note">Chỉ xem được trên máy chủ. Không lưu nội dung tin nhắn.</span>
+    <h1>🛡️ Quản trị — LAN Chat</h1>
+    <span class="note" id="content-note">Chỉ xem được trên máy chủ.</span>
   </header>
+  <nav class="tabs" role="tablist">
+    <button type="button" role="tab" id="tab-btn-members" aria-selected="true" data-tab="members">👥 Thành viên</button>
+    <button type="button" role="tab" id="tab-btn-logs" aria-selected="false" data-tab="logs">📋 Nhật ký hoạt động</button>
+  </nav>
   <main>
     <div id="banner" class="banner" role="status"></div>
 
+    <div id="tab-members" role="tabpanel">
+      <div class="stats" id="member-stats"></div>
+      <section class="card table-wrap">
+        <div class="toolbar">
+          <input type="search" id="member-search" placeholder="Tìm theo tên, tên đăng nhập, mã nhân viên, IP…" />
+          <button type="button" id="btn-members-refresh">Làm mới</button>
+          <button type="button" id="btn-members-csv">⬇ Xuất Excel (.csv)</button>
+        </div>
+        <table>
+          <thead>
+            <tr><th>Thành viên</th><th>Vai trò</th><th>Trạng thái</th><th>Đăng nhập gần nhất</th><th>Tin đã gửi</th><th>File đã gửi</th><th>Số nhóm</th><th>Tin gần nhất</th><th>Ngày tạo</th></tr>
+          </thead>
+          <tbody id="member-rows"><tr><td colspan="9" class="empty">Đang tải…</td></tr></tbody>
+        </table>
+        <p class="sub">Bấm vào một thành viên để xem toàn bộ nhật ký của người đó.</p>
+      </section>
+    </div>
+
+    <div id="tab-logs" role="tabpanel" hidden>
     <section class="card">
       <form id="filters" class="filters" autocomplete="off">
         <label>Thành viên
@@ -69,6 +108,7 @@
         <label>Nhóm hoạt động
           <select name="category" id="f-category">
             <option value="">Tất cả</option>
+            <option value="__messages">💬 Chỉ tin nhắn (gửi / sửa / thu hồi / ghim)</option>
             <option value="auth">Đăng nhập &amp; tài khoản</option>
             <option value="message">Tin nhắn &amp; nhóm</option>
             <option value="file">File</option>
@@ -118,6 +158,7 @@
         <tbody id="rows"><tr><td colspan="6" class="empty">Đang tải…</td></tr></tbody>
       </table>
     </section>
+    </div>
   </main>
   <script src="/admin/app.js"></script>
 </body>

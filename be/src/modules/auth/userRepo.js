@@ -27,6 +27,7 @@ function createUserRepo(db) {
     updatePassword: db.prepare('UPDATE users SET password_hash = ?, updated_at = ? WHERE id = ?'),
     updateAvatar: db.prepare('UPDATE users SET avatar = ?, updated_at = ? WHERE id = ?'),
     updateTheme: db.prepare('UPDATE users SET theme = ?, updated_at = ? WHERE id = ?'),
+    touchLogin: db.prepare('UPDATE users SET last_login_at = ?, last_login_ip = ? WHERE id = ?'),
   };
 
   return {
@@ -42,6 +43,7 @@ function createUserRepo(db) {
     updatePassword: (id, hash, now) => stmts.updatePassword.run(hash, now, id).changes,
     updateAvatar: (id, avatar, now) => stmts.updateAvatar.run(avatar, now, id).changes,
     updateTheme: (id, theme, now) => stmts.updateTheme.run(theme, now, id).changes,
+    touchLogin: (id, now, ip) => stmts.touchLogin.run(now, ip || null, id).changes,
   };
 }
 

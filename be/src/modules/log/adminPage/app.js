@@ -1,11 +1,13 @@
 /**
- * Script trang "Nhật ký hoạt động" (chạy trong trình duyệt trên máy chủ, không thư viện ngoài).
- * Gọi API cùng origin: /admin/api/users, /admin/api/logs, /admin/api/export.
+ * Script trang quản trị trên máy chủ (không thư viện ngoài): tab Thành viên + tab Nhật ký hoạt động.
+ * Gọi API cùng origin: /admin/api/info, /admin/api/members, /admin/api/users, /admin/api/logs, /admin/api/export.
  */
 'use strict';
 
 (function adminLogPage() {
   const AUTO_REFRESH_MS = 30000;
+  const MESSAGES_ONLY = '__messages';
+  const CONTENT_ACTIONS = new Set(['message_sent', 'message_edited', 'message_recalled']);
   const CSV_BOM = '﻿'; // để Excel đọc đúng tiếng Việt
 
   /** Tên hoạt động dễ hiểu (action trong log → tiếng Việt). */
@@ -98,6 +100,10 @@
       const value = String(data.get(key) || '').trim();
       if (value) params.set(key, value);
     }
+    if (params.get('category') === MESSAGES_ONLY) {
+      params.set('category', 'message');
+      params.set('action', 'message_');
+    }
     const from = dayBoundary(String(data.get('from') || ''), false);
     const to = dayBoundary(String(data.get('to') || ''), true);
     if (from) params.set('from', from);
@@ -149,8 +155,11 @@
 
   function renderRow(entry) {
     const details = describeDetails(entry);
+    const meta = entry.meta || {};
     const detailCell = el('td', null, [
       ...details.map((text) => el('div', { textContent: text })),
+      CONTENT_ACTIONS.has(entry.action) && meta.previous_content ? el('div', { className: 'content old', textContent: `Trước khi sửa: ${meta.previous_content}` }) : null,
+      CONTENT_ACTIONS.has(entry.action) && meta.content ? el('div', { className: 'content', textContent: meta.content }) : null,
       entry.meta ? el('details', null, [el('summary', { textContent: 'Dữ liệu gốc' }), el('pre', { textContent: JSON.stringify(entry.meta, null, 2) })]) : null,
     ]);
     const level = entry.level || 'info';
@@ -228,10 +237,11 @@
       showBanner('error', 'Không có dòng nào để xuất.');
       return;
     }
-    const header = ['Thời gian', 'Tên hiển thị', 'Tên đăng nhập', 'Mã nhân viên', 'Hoạt động', 'Mã hoạt động', 'Chi tiết', 'IP', 'Mức'];
+    const header = ['Thời gian', 'Tên hiển thị', 'Tên đăng nhập', 'Mã nhân viên', 'Hoạt động', 'Mã hoạt động', 'Chi tiết', 'Nội dung tin', 'Nội dung trước khi sửa', 'IP', 'Mức'];
     const lines = currentLogs.map((e) => [
       dateTimeFmt.format(new Date(e.ts)), e.display_name, e.username, e.employee_id,
-      ACTION_LABELS[e.action] || e.action, e.action, describeDetails(e).join(' | '), e.ip, e.level,
+      ACTION_LABELS[e.action] || e.action, e.action, describeDetails(e).join(' | '),
+      (e.meta && e.meta.content) || '', (e.meta && e.meta.previous_content) || '', e.ip, e.level,
     ].map(csvCell).join(','));
     downloadText(`lanchat-nhat-ky-${new Date().toISOString().slice(0, 10)}.csv`, 'text/csv;charset=utf-8', CSV_BOM + [header.map(csvCell).join(','), ...lines].join('\r\n'));
     showBanner('ok', `Đã xuất ${currentLogs.length} dòng ra file CSV.`);
@@ -261,5 +271,102 @@
     $(id).addEventListener('change', loadLogs);
   }
 
-  loadUsers().then(loadLogs);
+  // ---------------------------------------------------------------- Tab Thành viên
+  const ROLE_LABELS = { manager: 'Quản trị', member: 'Thành viên' };
+  const memberRowsEl = $('member-rows');
+  let members = [];
+
+  const formatTime = (iso) => (iso ? dateTimeFmt.format(new Date(iso)) : '—');
+
+  function memberMatches(m, keyword) {
+    if (!keyword) return true;
+    return [m.display_name, m.username, m.employee_id, m.last_login_ip].filter(Boolean).join(' ').toLowerCase().includes(keyword);
+  }
+
+  function renderMemberStats() {
+    const online = members.filter((m) => m.online).length;
+    const totalMessages = members.reduce((sum, m) => sum + m.messages_sent, 0);
+    const stat = (value, label) => el('div', { className: 'stat' }, [el('b', { textContent: String(value) }), el('span', { textContent: label })]);
+    $('member-stats').replaceChildren(stat(members.length, 'Tổng thành viên'), stat(online, 'Đang online'), stat(totalMessages, 'Tổng tin đã gửi'));
+  }
+
+  function renderMemberRow(m) {
+    const row = el('tr', { className: 'clickable', title: 'Xem nhật ký của ' + m.display_name }, [
+      el('td', null, [el('div', { textContent: m.display_name }), el('div', { className: 'sub', textContent: `${m.username} · ${m.employee_id}` })]),
+      el('td', null, [m.role === 'manager' ? el('span', { className: 'role', textContent: ROLE_LABELS.manager }) : el('span', { className: 'sub', textContent: ROLE_LABELS.member })]),
+      el('td', null, [el('span', { className: m.online ? 'dot on' : 'dot' }), document.createTextNode(m.online ? 'Online' : 'Offline')]),
+      el('td', null, [el('div', { textContent: formatTime(m.last_login_at) }), el('div', { className: 'sub ip', textContent: m.last_login_ip || '' })]),
+      el('td', { className: 'num', textContent: String(m.messages_sent) }),
+      el('td', { className: 'num', textContent: String(m.files_sent) }),
+      el('td', { className: 'num', textContent: String(m.groups_count) }),
+      el('td', { className: 'time', textContent: formatTime(m.last_message_at) }),
+      el('td', { className: 'time', textContent: formatTime(m.created_at) }),
+    ]);
+    row.addEventListener('click', () => showMemberLogs(m.id));
+    return row;
+  }
+
+  function renderMembers() {
+    const keyword = $('member-search').value.trim().toLowerCase();
+    const visible = members.filter((m) => memberMatches(m, keyword));
+    memberRowsEl.replaceChildren(
+      ...(visible.length ? visible.map(renderMemberRow) : [el('tr', null, [el('td', { colSpan: 9, className: 'empty', textContent: 'Không có thành viên nào.' })])])
+    );
+  }
+
+  async function loadMembers() {
+    try {
+      members = (await getJson('/admin/api/members')).members || [];
+      renderMemberStats();
+      renderMembers();
+    } catch (err) {
+      showBanner('error', `Không tải được danh sách thành viên: ${err.message}`);
+    }
+  }
+
+  function exportMembersCsv() {
+    if (!members.length) return;
+    const header = ['Tên hiển thị', 'Tên đăng nhập', 'Mã nhân viên', 'Vai trò', 'Trạng thái', 'Đăng nhập gần nhất', 'IP gần nhất', 'Tin đã gửi', 'File đã gửi', 'Số nhóm', 'Tin gần nhất', 'Ngày tạo'];
+    const lines = members.map((m) => [
+      m.display_name, m.username, m.employee_id, ROLE_LABELS[m.role] || m.role, m.online ? 'Online' : 'Offline',
+      formatTime(m.last_login_at), m.last_login_ip, m.messages_sent, m.files_sent, m.groups_count, formatTime(m.last_message_at), formatTime(m.created_at),
+    ].map(csvCell).join(','));
+    downloadText(`lanchat-thanh-vien-${new Date().toISOString().slice(0, 10)}.csv`, 'text/csv;charset=utf-8', CSV_BOM + [header.map(csvCell).join(','), ...lines].join('\r\n'));
+  }
+
+  // ---------------------------------------------------------------- Chuyển tab
+  function showTab(name) {
+    for (const tab of ['members', 'logs']) {
+      $(`tab-${tab}`).hidden = tab !== name;
+      $(`tab-btn-${tab}`).setAttribute('aria-selected', String(tab === name));
+    }
+    if (name === 'members') loadMembers();
+    else loadLogs();
+  }
+
+  /** Bấm vào 1 thành viên → tab Nhật ký, lọc đúng người đó, xem mọi hoạt động. */
+  function showMemberLogs(userId) {
+    form.reset();
+    $('f-user').value = String(userId);
+    showTab('logs');
+  }
+
+  async function loadInfo() {
+    try {
+      const info = await getJson('/admin/api/info');
+      $('content-note').textContent = info.log_message_content
+        ? 'Chỉ xem được trên máy chủ. Nhật ký CÓ lưu nội dung tin nhắn (kể cả tin đã sửa / thu hồi).'
+        : 'Chỉ xem được trên máy chủ. Nhật ký KHÔNG lưu nội dung tin nhắn.';
+    } catch (err) {
+      showBanner('error', `Không tải được cấu hình: ${err.message}`);
+    }
+  }
+
+  for (const id of ['tab-btn-members', 'tab-btn-logs']) $(id).addEventListener('click', (event) => showTab(event.currentTarget.dataset.tab));
+  $('member-search').addEventListener('input', renderMembers);
+  $('btn-members-refresh').addEventListener('click', loadMembers);
+  $('btn-members-csv').addEventListener('click', exportMembersCsv);
+
+  loadInfo();
+  loadUsers().then(loadMembers);
 })();

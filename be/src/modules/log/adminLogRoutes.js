@@ -3,7 +3,9 @@
  *
  *   GET /admin                 trang HTML (adminPage/index.html)
  *   GET /admin/app.js          script của trang (tách file để CSP không cần 'unsafe-inline' cho script)
+ *   GET /admin/api/info        cấu hình hiển thị (có ghi nội dung tin nhắn không)
  *   GET /admin/api/users       danh sách thành viên cho bộ lọc
+ *   GET /admin/api/members     tab Quản lý thành viên: online, đăng nhập cuối, số tin/file/nhóm
  *   GET /admin/api/logs        truy vấn log (query string = bộ lọc)
  *   GET /admin/api/export      tải log đã lọc dạng .jsonl
  *
@@ -72,10 +74,10 @@ function loadStaticFiles() {
 
 /**
  * Tạo các route cho http.js (cùng shape { method, pattern, handle }).
- * @param {{ logAggregator: object, logger: object }} deps
+ * @param {{ logAggregator: object, memberDirectory: object, logger: object, config: object }} deps
  */
 function createAdminLogRoutes(deps) {
-  const { logAggregator, logger } = deps;
+  const { logAggregator, memberDirectory, logger, config } = deps;
   const files = loadStaticFiles();
 
   /** Bọc handler: kiểm tra localhost trước, bắt lỗi để không lộ chi tiết. */
@@ -104,6 +106,16 @@ function createAdminLogRoutes(deps) {
       method: 'GET',
       pattern: /^\/admin\/app\.js$/,
       handle: guarded((req, res) => send(res, 200, 'text/javascript; charset=utf-8', files.script)),
+    },
+    {
+      method: 'GET',
+      pattern: /^\/admin\/api\/info$/,
+      handle: guarded((req, res) => sendJson(res, 200, { success: true, log_message_content: Boolean(config.logging.logMessageContent) })),
+    },
+    {
+      method: 'GET',
+      pattern: /^\/admin\/api\/members$/,
+      handle: guarded((req, res) => sendJson(res, 200, { success: true, members: memberDirectory.listMembers() })),
     },
     {
       method: 'GET',

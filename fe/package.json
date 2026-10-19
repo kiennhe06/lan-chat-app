@@ -1,7 +1,7 @@
 {
   "name": "lan-chat-app",
   "productName": "LAN Chat",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "private": true,
   "description": "LAN Chat client — Electron portable .exe, chạy offline trong LAN, hỗ trợ P2P khi server offline.",
   "main": "electron/main.js",

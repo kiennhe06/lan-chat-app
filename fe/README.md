@@ -11,7 +11,7 @@
 | `npm run dev` | Vite (renderer) + Electron (`--dev-server=http://127.0.0.1:5173`) |
 | `npm start` | Electron load `dist/renderer/index.html` (cần `npm run build:renderer` trước) |
 | `npm test` (= `node --test test/`) | Test main process (repositories, sync, P2P, token, log...) |
-| `npm run dist:win` | Build renderer + `electron-builder --win portable --x64` → `release/LAN-Chat-1.0.0.exe` |
+| `npm run dist:win` | Build renderer + `electron-builder --win portable --x64` → `release/LAN-Chat-1.1.0.exe` |
 | `node scripts/generate-icons.js` | Sinh lại `build/icon.png`, `icon.ico`, `tray-icon.png` (dùng sharp của `../server`, chỉ lúc dev) |
 
 Cờ dòng lệnh của main: `--hidden` (khởi động ẩn, dùng cho shortcut tự khởi động), `--smoke-test`
@@ -28,7 +28,7 @@ LANCHAT_CLIENT_BASE_DIR=/tmp/clientB LANCHAT_P2P_PORT=5202 npx electron .
 
 ```
 <thư mục chứa .exe>/
-├── LAN-Chat-1.0.0.exe
+├── LAN-Chat-1.1.0.exe
 ├── app-config.json            ← tự sinh lần chạy đầu
 └── data/
     ├── client.db              ← SQLite WAL (lịch sử, cache, hàng đợi offline)
@@ -93,7 +93,7 @@ Luồng: IPC handler → service → repository → SQLite. Service không impor
 - Popup/điều hướng ra ngoài bị chặn; link http(s) chỉ mở bằng trình duyệt hệ thống khi người dùng click.
 - Token phiên ký Ed25519 bởi server, client verify local bằng `server_public_key` đã cache → P2P auth khi server offline.
 - P2P chỉ nhận IP cùng subnet / loopback. Peer chỉ được gửi tin của chính mình (sender = user trong token).
-- Log redact `password/token/secret/authorization`; nội dung tin không được log (trừ khi bật `logMessageContent`).
+- Log redact `password/token/secret/authorization`; app không log nội dung tin; nội dung tin được server ghi nhật ký (cấu hình `logging.logMessageContent` của server).
 - "Ghi nhớ đăng nhập" không tick → token chỉ nằm trong RAM. Người khác đăng nhập trên cùng máy → xóa cache tin của tài khoản trước.
 
 ## Checklist test thật (máy offline)

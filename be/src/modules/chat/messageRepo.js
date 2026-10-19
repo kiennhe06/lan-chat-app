@@ -34,6 +34,12 @@ function createMessageRepo(db) {
     recall: db.prepare(
       "UPDATE messages SET recalled = 1, content = '', updated_at = ? WHERE client_message_id = ? AND recalled = 0"
     ),
+    statsBySender: db.prepare(`
+      SELECT sender_id,
+             COUNT(*) AS messages_sent,
+             SUM(CASE WHEN type IN ('image', 'file') THEN 1 ELSE 0 END) AS files_sent,
+             MAX(created_at) AS last_message_at
+      FROM messages WHERE type != 'system' GROUP BY sender_id`),
   };
 
   return {
@@ -48,6 +54,8 @@ function createMessageRepo(db) {
     maxIdInConversation: (convId) => stmts.maxIdInConversation.get(convId).n,
     updateContent: (cmid, content, now) => stmts.updateContent.run(content, now, cmid).changes,
     recall: (cmid, now) => stmts.recall.run(now, cmid).changes,
+    /** Thống kê tin đã gửi theo người gửi (bỏ tin system). */
+    statsBySender: () => stmts.statsBySender.all(),
   };
 }
 
