@@ -219,6 +219,7 @@ function printBanner(instance) {
     `  Đang lắng nghe: ${instance.host}:${instance.port} (HTTP + WebSocket ${C.NETWORK.WS_PATH})`,
     ...addrs.map((a) => `  Địa chỉ LAN : ${a}`),
     `  Discovery   : UDP ${instance.config.discovery.enabled ? instance.config.discovery.port : 'tắt'}`,
+    `  Quản trị    : http://localhost:${instance.port}/admin  (chỉ mở được trên máy này)`,
     `  Dữ liệu     : ${instance.paths.DATA_DIR}`,
     '  Nhấn Ctrl+C để dừng.',
   ];
