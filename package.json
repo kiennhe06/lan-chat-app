@@ -1,7 +1,7 @@
 {
   "name": "lan-chat-workspace",
   "private": true,
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "LAN Chat — server (Node portable) + client (Electron portable). Chạy 100% offline trong mạng LAN.",
   "scripts": {
     "sync:shared": "node scripts/sync-shared.js"

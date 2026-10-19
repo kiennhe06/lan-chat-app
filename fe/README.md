@@ -11,7 +11,7 @@
 | `npm run dev` | Vite (renderer) + Electron (`--dev-server=http://127.0.0.1:5173`) |
 | `npm start` | Electron load `dist/renderer/index.html` (cần `npm run build:renderer` trước) |
 | `npm test` (= `node --test test/`) | Test main process (repositories, sync, P2P, token, log...) |
-| `npm run dist:win` | Build renderer + `electron-builder --win portable --x64` → `release/LAN-Chat-1.0.0.exe` |
+| `npm run dist:win` | Build renderer + `electron-builder --win portable --x64` → `release/LAN-Chat-1.1.0.exe` |
 | `node scripts/generate-icons.js` | Sinh lại `build/icon.png`, `icon.ico`, `tray-icon.png` (dùng sharp của `../server`, chỉ lúc dev) |
 
 Cờ dòng lệnh của main: `--hidden` (khởi động ẩn, dùng cho shortcut tự khởi động), `--smoke-test`
@@ -28,7 +28,7 @@ LANCHAT_CLIENT_BASE_DIR=/tmp/clientB LANCHAT_P2P_PORT=5202 npx electron .
 
 ```
 <thư mục chứa .exe>/
-├── LAN-Chat-1.0.0.exe
+├── LAN-Chat-1.1.0.exe
 ├── app-config.json            ← tự sinh lần chạy đầu
 └── data/
     ├── client.db              ← SQLite WAL (lịch sử, cache, hàng đợi offline)
