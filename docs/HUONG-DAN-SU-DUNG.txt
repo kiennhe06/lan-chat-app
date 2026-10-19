@@ -126,9 +126,20 @@ PHẦN C. DÀNH CHO NGƯỜI QUẢN LÝ (máy chạy máy chủ)
 ------------------------------------------------------------------
 
 C1. CHẠY MÁY CHỦ
+  KHÔNG cần cài Node.js, KHÔNG cần quyền administrator: trong gói đã
+  có sẵn Node.js portable (thư mục "node") và mọi thư viện cần thiết.
+  Máy bị IT khóa cài đặt vẫn chạy được.
+
   1. Chuột phải file "LANChat-Server-1.1.0-win-x64.zip"
      -> Properties -> tick "Unblock" (nếu có) -> OK.
-  2. Chuột phải -> "Extract All..." -> giải nén vào D:\LANChat-Server\
+  2. Chuột phải -> "Extract All..." -> giải nén vào một thư mục bạn
+     có quyền ghi, ví dụ D:\LANChat-Server\
+     (máy không có ổ D: thì dùng C:\LANChat-Server\ hoặc
+     C:\Users\<tên bạn>\LANChat-Server\).
+     KHÔNG giải nén vào:
+       - "C:\Program Files" (không có quyền ghi dữ liệu),
+       - Desktop / Documents nếu máy đồng bộ OneDrive (dễ hỏng dữ liệu),
+       - ổ mạng hoặc USB.
   3. Lần đầu: bấm đúp "start-server.bat". Cửa sổ đen hiện địa chỉ
      máy chủ, ví dụ ws://192.168.1.5:5001/ws
      -> ghi lại IP này (192.168.1.5) để báo cho nhân viên.
@@ -137,6 +148,15 @@ C1. CHẠY MÁY CHỦ
   5. Người ĐĂNG KÝ ĐẦU TIÊN trong ứng dụng sẽ là quản trị viên (được
      chặn IP). Hãy đăng ký tài khoản của bạn trước tiên.
      Nhật ký hoạt động xem trên máy chủ, xem mục C5.
+  6. Tự chạy máy chủ mỗi khi bật máy (không cần quyền admin):
+     - Chuột phải "start-server.vbs" -> "Create shortcut"
+       (Windows 11: "Show more options" -> "Create shortcut").
+     - Bấm phím Windows + R, gõ  shell:startup  rồi Enter.
+     - Kéo shortcut vừa tạo vào thư mục vừa mở.
+     Nếu máy chặn file .vbs, làm tương tự với "start-server.bat"
+     (khi đó sẽ có cửa sổ đen, đừng đóng nó).
+  7. Tắt máy chủ: đóng cửa sổ đen (nếu chạy bằng .bat), hoặc mở
+     Task Manager -> tab Details -> chọn "node.exe" -> End task.
 
 C2. CHIA SẺ FILE CHO NHÂN VIÊN QUA MẠNG (không cần USB)
   1. Tạo thư mục D:\ChiaSe\ và copy "LAN-Chat-1.1.0.exe" cùng file
