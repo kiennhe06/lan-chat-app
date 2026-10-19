@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Nhật ký hoạt động — LAN Chat</title>
+  <style>
+    :root {
+      --bg: #f3f5f9; --surface: #ffffff; --text: #1f2937; --muted: #6b7280; --border: #e5e7eb;
+      --primary: #3563e9; --primary-text: #ffffff; --row-hover: #f8fafc;
+      --lv-debug: #9ca3af; --lv-info: #3563e9; --lv-warn: #d97706; --lv-error: #dc2626; --lv-audit: #7c3aed;
+      --danger-bg: #fef2f2; --danger-text: #b91c1c; --ok-bg: #ecfdf5; --ok-text: #047857;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #0f1420; --surface: #171e2d; --text: #e5e7eb; --muted: #9ca3af; --border: #283246;
+        --primary: #5b82f0; --row-hover: #1d2638; --danger-bg: #3b1518; --danger-text: #fca5a5; --ok-bg: #0f2e24; --ok-text: #6ee7b7;
+      }
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--bg); color: var(--text); font: 14px/1.45 "Segoe UI", Roboto, Arial, sans-serif; }
+    header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 14px 24px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+    header h1 { font-size: 18px; margin: 0; }
+    header .note { color: var(--muted); font-size: 13px; }
+    main { padding: 16px 24px 32px; max-width: 1600px; margin: 0 auto; }
+    .card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; margin-bottom: 14px; }
+    .filters { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 10px 14px; align-items: end; }
+    label { display: flex; flex-direction: column; gap: 4px; font-size: 12px; color: var(--muted); font-weight: 600; }
+    label.inline { flex-direction: row; align-items: center; gap: 8px; font-weight: 500; color: var(--text); font-size: 13px; }
+    input, select { font: inherit; color: var(--text); background: var(--bg); border: 1px solid var(--border); border-radius: 6px; padding: 7px 9px; min-width: 0; }
+    input[type="checkbox"] { width: 16px; height: 16px; padding: 0; }
+    .actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; align-items: center; }
+    button { font: inherit; border-radius: 6px; padding: 7px 14px; border: 1px solid var(--border); background: var(--surface); color: var(--text); cursor: pointer; }
+    button.primary { background: var(--primary); border-color: var(--primary); color: var(--primary-text); font-weight: 600; }
+    button:disabled { opacity: .6; cursor: default; }
+    .status { margin-left: auto; color: var(--muted); font-size: 13px; }
+    .banner { padding: 10px 14px; border-radius: 8px; margin-bottom: 14px; display: none; }
+    .banner.error { display: block; background: var(--danger-bg); color: var(--danger-text); }
+    .banner.ok { display: block; background: var(--ok-bg); color: var(--ok-text); }
+    .table-wrap { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--border); vertical-align: top; }
+    th { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: .03em; position: sticky; top: 0; background: var(--surface); }
+    tbody tr:hover { background: var(--row-hover); }
+    td.time { white-space: nowrap; font-variant-numeric: tabular-nums; }
+    td.ip { white-space: nowrap; font-family: Consolas, monospace; font-size: 13px; }
+    .sub { color: var(--muted); font-size: 12px; }
+    .badge { display: inline-block; font-size: 11px; font-weight: 700; padding: 1px 7px; border-radius: 999px; color: #fff; text-transform: uppercase; }
+    .lv-debug { background: var(--lv-debug); } .lv-info { background: var(--lv-info); } .lv-warn { background: var(--lv-warn); }
+    .lv-error { background: var(--lv-error); } .lv-audit { background: var(--lv-audit); }
+    details summary { cursor: pointer; color: var(--muted); font-size: 12px; }
+    pre { margin: 6px 0 0; white-space: pre-wrap; word-break: break-word; font-size: 12px; background: var(--bg); padding: 8px; border-radius: 6px; }
+    .empty { text-align: center; color: var(--muted); padding: 32px; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>📋 Nhật ký hoạt động — LAN Chat</h1>
+    <span class="note">Chỉ xem được trên máy chủ. Không lưu nội dung tin nhắn.</span>
+  </header>
+  <main>
+    <div id="banner" class="banner" role="status"></div>
+
+    <section class="card">
+      <form id="filters" class="filters" autocomplete="off">
+        <label>Thành viên
+          <select name="user_id" id="f-user"><option value="">Tất cả</option></select>
+        </label>
+        <label>Nhóm hoạt động
+          <select name="category" id="f-category">
+            <option value="">Tất cả</option>
+            <option value="auth">Đăng nhập &amp; tài khoản</option>
+            <option value="message">Tin nhắn &amp; nhóm</option>
+            <option value="file">File</option>
+            <option value="connection">Kết nối</option>
+            <option value="settings">Cài đặt &amp; quản trị</option>
+            <option value="app">Ứng dụng</option>
+            <option value="error">Lỗi</option>
+          </select>
+        </label>
+        <label>Mức tối thiểu
+          <select name="min_level" id="f-level">
+            <option value="debug">Tất cả (cả debug)</option>
+            <option value="info" selected>Thông tin trở lên</option>
+            <option value="warn">Cảnh báo trở lên</option>
+            <option value="error">Lỗi trở lên</option>
+            <option value="audit">Chỉ audit</option>
+          </select>
+        </label>
+        <label>Từ ngày <input type="date" name="from" id="f-from" /></label>
+        <label>Đến ngày <input type="date" name="to" id="f-to" /></label>
+        <label>Từ khóa <input type="search" name="q" id="f-q" placeholder="tên, IP, nhóm, file…" /></label>
+        <label>Số dòng tối đa
+          <select name="limit" id="f-limit">
+            <option value="200">200</option>
+            <option value="500" selected>500</option>
+            <option value="1000">1000</option>
+            <option value="2000">2000</option>
+          </select>
+        </label>
+        <label class="inline"><input type="checkbox" name="users_only" id="f-users-only" checked /> Chỉ hoạt động của thành viên</label>
+      </form>
+      <div class="actions">
+        <button type="submit" form="filters" class="primary" id="btn-search">Lọc</button>
+        <button type="button" id="btn-reset">Xóa bộ lọc</button>
+        <label class="inline"><input type="checkbox" id="auto-refresh" /> Tự làm mới mỗi 30 giây</label>
+        <button type="button" id="btn-csv">⬇ Xuất Excel (.csv)</button>
+        <button type="button" id="btn-jsonl">⬇ Xuất .jsonl</button>
+        <span class="status" id="status"></span>
+      </div>
+    </section>
+
+    <section class="card table-wrap">
+      <table>
+        <thead>
+          <tr><th>Thời gian</th><th>Thành viên</th><th>Hoạt động</th><th>Chi tiết</th><th>IP</th><th>Mức</th></tr>
+        </thead>
+        <tbody id="rows"><tr><td colspan="6" class="empty">Đang tải…</td></tr></tbody>
+      </table>
+    </section>
+  </main>
+  <script src="/admin/app.js"></script>
+</body>
+</html>

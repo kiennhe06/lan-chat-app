@@ -1,0 +1,22 @@
+{
+  "name": "lanchat-server",
+  "version": "1.0.0",
+  "private": true,
+  "description": "LAN Chat server — Node.js thuần, chạy portable: node index.js (không Electron, không UI).",
+  "main": "index.js",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "start": "node index.js",
+    "test": "node --test test/",
+    "sync:shared": "node ../scripts/sync-shared.js",
+    "package:win": "node scripts/package-win.js"
+  },
+  "dependencies": {
+    "bcrypt": "^6.0.0",
+    "better-sqlite3": "^13.0.3",
+    "sharp": "^0.35.5",
+    "ws": "^8.22.0"
+  }
+}

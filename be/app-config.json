@@ -1,0 +1,23 @@
+{
+  "dataDir": null,
+  "server": {
+    "host": "0.0.0.0",
+    "port": 5001,
+    "name": "LANChat Server"
+  },
+  "discovery": {
+    "enabled": true,
+    "port": 41234,
+    "intervalMs": 3000
+  },
+  "p2p": {
+    "discoveryPort": 5003,
+    "broadcastEnabled": true
+  },
+  "logging": {
+    "level": "info",
+    "consoleLevel": "error",
+    "retentionDays": 30,
+    "logMessageContent": false
+  }
+}
